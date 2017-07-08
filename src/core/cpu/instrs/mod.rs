@@ -10,6 +10,7 @@ mod loads;
 mod loads16;
 
 // ALU
+mod bitrotation;
 mod bitwise;
 mod increments;
 
@@ -20,6 +21,7 @@ use core::cpu::instrs::jumps::*;
 use core::cpu::instrs::loads::*;
 use core::cpu::instrs::loads16::*;
 
+use core::cpu::instrs::bitrotation::*;
 use core::cpu::instrs::bitwise::*;
 use core::cpu::instrs::increments::*;
 
@@ -53,6 +55,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0x1C => inc_e(cpu),
         0x1D => dec_e(cpu),
         0x1E => ld_e_n(cpu),
+        0x1F => rra(cpu),
         0x20 => jr_nz_n(cpu),
         0x21 => ld_hl_nnnn(cpu),
         0x22 => ldi_phl_a(cpu),
