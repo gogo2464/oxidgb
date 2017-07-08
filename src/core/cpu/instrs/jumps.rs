@@ -260,8 +260,8 @@ pub fn ret_c(cpu : &mut CPU) -> u8 {
 pub fn reti(cpu : &mut CPU) -> u8 {
     cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
     cpu.regs.sp += 2;
-    // TODO
-    //cpu.interruptsEnabled = true;
+
+    cpu.interrupts_countdown = 1;
     
     return 16 /* Cycles */;
 }

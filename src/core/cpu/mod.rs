@@ -15,7 +15,11 @@ use core::cpu::instrs::execute_instruction;
 
 pub struct CPU {
     pub regs : Registers,
-    pub mem : GBMemory
+    pub mem : GBMemory,
+    pub interrupts_enabled : bool,
+    pub interrupts_countdown : i8,
+    pub stopped : bool,
+    pub halted : bool
 }
 
 impl CPU {
@@ -42,7 +46,11 @@ impl CPU {
     pub fn build(mem : GBMemory) -> CPU {
         return CPU {
             regs : CPU::get_default_registers(),
-            mem : mem
+            mem : mem,
+            interrupts_enabled : true,
+            interrupts_countdown : -1,
+            stopped : false,
+            halted : false
         }
     }
 
