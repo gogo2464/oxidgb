@@ -83,3 +83,20 @@ pub fn adc_a_n(cpu : &mut CPU) -> u8 {
 
     return 8 /* Cycles */;
 }
+
+// Subtraction
+
+/// **0x90 ~ 0x95** - *SUB A,X* - Subtract X from A.
+pub fn sub(x : u8, cpu : &mut CPU) -> u8 {
+    let prev_value = cpu.regs.a;
+    let new_value = prev_value.wrapping_sub(x);
+
+    cpu.regs.a = new_value;
+
+    cpu.regs.set_flag_z(new_value == 0);
+    cpu.regs.set_flag_n(true);
+    cpu.regs.set_flag_h((prev_value & 0xF) < (new_value & 0xF));
+    cpu.regs.set_flag_c(new_value < 0);
+
+    return 4 /* Cycles */;
+}
