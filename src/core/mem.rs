@@ -62,6 +62,17 @@ impl GBMemory {
         println!("Writes not implemented: {:04x} = {:02x}", ptr, val);
     }
 
+    /// Reads a short. 0xFFFF if invalid.
+    pub fn read_short(&self, ptr : u16) -> u16 {
+        return (self.read(ptr) as u16) | ((self.read(ptr + 1) as u16) << 8);
+    }
+
+    /// Writes a short value to a memory location if possible.
+    pub fn write_short(&mut self, ptr : u16, val : u16) {
+        self.write(ptr, (val & 0xFF) as u8);
+        self.write(ptr + 1, ((val >> 8) & 0xFF) as u8);
+    }
+
     /// Builds a new memory manager.
     pub fn build(rom : GameROM) -> GBMemory {
         return GBMemory {
