@@ -9,12 +9,17 @@ mod jumps;
 mod loads;
 mod loads16;
 
+// ALU
+mod bitwise;
+
 use core::cpu::CPU;
 
 use core::cpu::instrs::special::*;
 use core::cpu::instrs::jumps::*;
 use core::cpu::instrs::loads::*;
 use core::cpu::instrs::loads16::*;
+
+use core::cpu::instrs::bitwise::*;
 
 #[inline]
 pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
@@ -115,6 +120,30 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0x7D => ld_x_y(cpu.regs.l, &mut cpu.regs.a),
         0x7E => ld_x_phl(cpu.regs.get_hl(), &cpu.mem, &mut cpu.regs.a),
         0x7F => ld_x_y(cpu.regs.a, &mut cpu.regs.a),
+        0xA0 => and(cpu.regs.b, cpu),
+        0xA1 => and(cpu.regs.c, cpu),
+        0xA2 => and(cpu.regs.d, cpu),
+        0xA3 => and(cpu.regs.e, cpu),
+        0xA4 => and(cpu.regs.h, cpu),
+        0xA5 => and(cpu.regs.l, cpu),
+        0xA6 => and_phl(cpu),
+        0xA7 => and(cpu.regs.a, cpu),
+        0xA8 => xor(cpu.regs.b, cpu),
+        0xA9 => xor(cpu.regs.c, cpu),
+        0xAA => xor(cpu.regs.d, cpu),
+        0xAB => xor(cpu.regs.e, cpu),
+        0xAC => xor(cpu.regs.h, cpu),
+        0xAD => xor(cpu.regs.l, cpu),
+        0xAE => xor_hl(cpu),
+        0xAF => xor(cpu.regs.a, cpu),
+        0xB0 => or(cpu.regs.b, cpu),
+        0xB1 => or(cpu.regs.c, cpu),
+        0xB2 => or(cpu.regs.d, cpu),
+        0xB3 => or(cpu.regs.e, cpu),
+        0xB4 => or(cpu.regs.h, cpu),
+        0xB5 => or(cpu.regs.l, cpu),
+        0xB6 => or_phl(cpu),
+        0xB7 => or(cpu.regs.a, cpu),
         0xC2 => jp_nz_nn(cpu),
         0xC3 => jmp_nn(cpu),
         0xD2 => jp_nc_nn(cpu),
@@ -148,12 +177,14 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xE3 => bad_instruction(instr),
         0xE4 => bad_instruction(instr),
         0xE5 => push_hl(cpu),
+        0xE6 => and_n(cpu),
         0xE7 => rst(cpu, 0x20),
         0xE9 => jmp_hl(cpu),
         0xEA => ld_pnn_a(cpu),
         0xEB => bad_instruction(instr),
         0xEC => bad_instruction(instr),
         0xED => bad_instruction(instr),
+        0xEE => xor_n(cpu),
         0xEF => rst(cpu, 0x28),
         0xF0 => ldh_a_pn(cpu),
         0xF1 => pop_af(cpu),
@@ -161,6 +192,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xF3 => di(cpu),
         0xF4 => bad_instruction(instr),
         0xF5 => push_af(cpu),
+        0xF6 => or_n(cpu),
         0xF7 => rst(cpu, 0x30),
         0xF8 => ldhl_sp_n(cpu),
         0xF9 => ld_sp_hl(cpu),
@@ -169,7 +201,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xFC => bad_instruction(instr),
         0xFD => bad_instruction(instr),
         0xFF => rst(cpu, 0x38),
-        
+
         _ => {
             panic!("Unknown instruction: ${:02X} at ${:04X}", instr, origin);
         }
