@@ -139,5 +139,3 @@ pub fn ld_phl_x(x : u8, cpu : &mut CPU) -> u8 {
     cpu.mem.write(cpu.regs.get_hl(), x);
     return 8 /* Cycles */;
 }
-
-// 16-bit loads

@@ -7,31 +7,38 @@
 mod special;
 mod jumps;
 mod loads;
+mod loads16;
 
 use core::cpu::CPU;
 
 use core::cpu::instrs::special::*;
 use core::cpu::instrs::jumps::*;
 use core::cpu::instrs::loads::*;
+use core::cpu::instrs::loads16::*;
 
 #[inline]
 pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
     return match instr {
         0x00 => nop(cpu),
+        0x01 => ld_bc_nnnn(cpu),
         0x02 => ld_pxx_x(cpu.regs.get_bc(), cpu.regs.a, cpu),
         0x06 => ld_b_n(cpu),
+        0x08 => ld_pnn_sp(cpu),
         0x0A => ld_n_pxx(&cpu.mem, cpu.regs.get_bc(), &mut cpu.regs.a),
         0x0E => ld_c_n(cpu),
+        0x11 => ld_de_nn(cpu),
         0x12 => ld_pxx_x(cpu.regs.get_de(), cpu.regs.a, cpu),
         0x16 => ld_d_n(cpu),
         0x18 => jr_n(cpu),
         0x1A => ld_n_pxx(&cpu.mem, cpu.regs.get_de(), &mut cpu.regs.a),
         0x1E => ld_e_n(cpu),
         0x20 => jr_nz_n(cpu),
+        0x21 => ld_hl_nnnn(cpu),
         0x22 => ldi_phl_a(cpu),
         0x26 => ld_h_n(cpu),
         0x28 => jr_z_n(cpu),
         0x2A => ldi_a_phl(cpu),
+        0x31 => ld_sp_nn(cpu),
         0x32 => ldd_phl_a(cpu),
         0x2E => ld_l_n(cpu),
         0x30 => jr_nc_n(cpu),
@@ -106,11 +113,15 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xC3 => jmp_nn(cpu),
         0xD2 => jp_nc_nn(cpu),
         0xDA => jp_c_nn(cpu),
+        0xC1 => pop_bc(cpu),
         0xC4 => call_nz_nn(cpu),
+        0xC5 => push_bc(cpu),
         0xCA => jp_z_nn(cpu),
         0xCC => call_z_nn(cpu),
         0xCD => call_nn(cpu),
+        0xD1 => pop_de(cpu),
         0xD4 => call_nc_nn(cpu),
+        0xD5 => push_de(cpu),
         0xDC => call_c_nn(cpu),
         0xC0 => ret_nz(cpu),
         0xC7 => rst(cpu, 0x00),
@@ -122,10 +133,22 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xD8 => ret_c(cpu),
         0xD9 => reti(cpu),
         0xDF => rst(cpu, 0x18),
+        0xE0 => ldh_pn_a(cpu),
+        0xE1 => pop_hl(cpu),
+        0xE3 => ld_pc(cpu),
+        0xE5 => push_hl(cpu),
         0xE7 => rst(cpu, 0x20),
         0xE9 => jmp_hl(cpu),
+        0xEA => ld_pnn_a(cpu),
         0xEF => rst(cpu, 0x28),
+        0xF0 => ldh_a_pn(cpu),
+        0xF1 => pop_af(cpu),
+        0xF2 => ld_a_ptrc(cpu),
+        0xF5 => push_af(cpu),
         0xF7 => rst(cpu, 0x30),
+        0xF8 => ldhl_sp_n(cpu),
+        0xF9 => ld_sp_hl(cpu),
+        0xFA => ld_a_pnn(cpu),
         0xFF => rst(cpu, 0x38),
 
 
