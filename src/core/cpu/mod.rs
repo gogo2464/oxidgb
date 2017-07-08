@@ -28,13 +28,15 @@ impl CPU {
         // Read instruction
         let current_instr = self.regs.pc;
 
+        println!("PC: {:04x}", current_instr);
+
         let mut raw_instruction = self.mem.read(current_instr) as u16;
 
-        self.regs.pc += 1;
+        self.regs.pc = self.regs.pc.wrapping_add(1);
 
         if raw_instruction == 0xCB {
             raw_instruction = (raw_instruction << 8) | (self.mem.read(current_instr + 1) as u16);
-            self.regs.pc += 1;
+            self.regs.pc = self.regs.pc.wrapping_add(1);
         }
 
         println!("Read instruction: {:04x}", raw_instruction);

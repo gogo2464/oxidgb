@@ -14,7 +14,7 @@ fn main() {
     println!("Oxidgb v0.1");
 
     // Load game ROM
-    let rom = GameROM::build(Path::new("tetris.gb"));
+    let rom = GameROM::build(Path::new("jp.gb"));
 
     // Build memory
     let memory = GBMemory::build(rom);

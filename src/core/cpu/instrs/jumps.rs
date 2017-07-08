@@ -10,7 +10,7 @@ use core::cpu::CPU;
 pub fn jr_n(cpu : &mut CPU) -> u8 {
     let new_ptr = cpu.mem.read(cpu.regs.pc) as u16;
 
-    cpu.regs.pc += 1 + new_ptr;
+    cpu.regs.pc = cpu.regs.pc.wrapping_add(new_ptr.wrapping_add(1));
 
     // TODO
     /*
@@ -26,10 +26,10 @@ pub fn jr_n(cpu : &mut CPU) -> u8 {
 pub fn jr_nz_n(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_z() {
         let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc += n + 1 /* +1 for n size */;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
-        cpu.regs.pc += 1;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
         return 8 /* Cycles */;
     }
 }
@@ -38,10 +38,10 @@ pub fn jr_nz_n(cpu : &mut CPU) -> u8 {
 pub fn jr_z_n(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_z() {
         let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc += n + 1 /* +1 for n size */;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
-        cpu.regs.pc += 1;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
         return 8 /* Cycles */;
     }
 }
@@ -50,10 +50,10 @@ pub fn jr_z_n(cpu : &mut CPU) -> u8 {
 pub fn jr_nc_n(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_c() {
         let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc += n + 1 /* +1 for n size */;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
-        cpu.regs.pc += 1;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
         return 8 /* Cycles */;
     }
 }
@@ -62,10 +62,10 @@ pub fn jr_nc_n(cpu : &mut CPU) -> u8 {
 pub fn jr_c_n(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_c() {
         let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc += n + 1 /* +1 for n size */;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
-        cpu.regs.pc += 1;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
         return 8 /* Cycles */;
     }
 }
@@ -76,7 +76,7 @@ pub fn jp_nz_nn(cpu : &mut CPU) -> u8 {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
         return 16 /* Cycles */;
     } else {
-        cpu.regs.pc += 2;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
         return 12 /* Cycles */;
     }
 }
@@ -95,7 +95,7 @@ pub fn jp_nc_nn(cpu : &mut CPU) -> u8 {
 
         return 16 /* Cycles */;
     } else {
-        cpu.regs.pc += 2;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
         
         return 12 /* Cycles */;
     }
@@ -108,7 +108,7 @@ pub fn jp_c_nn(cpu : &mut CPU) -> u8 {
         
         return 16 /* Cycles */;
     } else {
-        cpu.regs.pc += 2;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
         
         return 12 /* Cycles */;
     }
@@ -119,13 +119,13 @@ pub fn jp_c_nn(cpu : &mut CPU) -> u8 {
 /// **0xC4** - *CALL NZ,nn* - If Z is false jump to address nn and store current pc in stack
 pub fn call_nz_nn(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_z() {
-        cpu.regs.sp -= 2;
-        cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc + 2);
+        cpu.regs.sp = cpu.regs.sp.wrapping_sub(2);
+        cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc.wrapping_add(2));
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
         
         return 24 /* Cycles */;
     } else {
-        cpu.regs.pc += 2;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
         
         return 12 /* Cycles */;
     }
@@ -138,7 +138,7 @@ pub fn jp_z_nn(cpu : &mut CPU) -> u8 {
 
         return 16 /* Cycles */;
     } else {
-        cpu.regs.pc += 2;
+        cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
 
         return 12 /* Cycles */;
     }
@@ -216,7 +216,7 @@ pub fn ret_nz(cpu : &mut CPU) -> u8 {
 pub fn ret_z(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_z() {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
-        cpu.regs.sp += 2;
+        cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
         
         return 20 /* Cycles */;
     } else {
@@ -227,7 +227,7 @@ pub fn ret_z(cpu : &mut CPU) -> u8 {
 /// **0xC9** - *RET* - Pop from stack, and jump to this address
 pub fn ret(cpu : &mut CPU) -> u8 {
     cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
-    cpu.regs.sp += 2;
+    cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
     
     return 16 /* Cycles */;
 }
@@ -236,7 +236,7 @@ pub fn ret(cpu : &mut CPU) -> u8 {
 pub fn ret_nc(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_c() {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
-        cpu.regs.sp += 2;
+        cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
         
         return 20 /* Cycles */;
     } else {
@@ -248,7 +248,7 @@ pub fn ret_nc(cpu : &mut CPU) -> u8 {
 pub fn ret_c(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_c() {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
-        cpu.regs.sp += 2;
+        cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
         
         return 20 /* Cycles */;
     } else {
@@ -259,7 +259,7 @@ pub fn ret_c(cpu : &mut CPU) -> u8 {
 /// **0xD9** - *RETI* - Return and enable interrupts
 pub fn reti(cpu : &mut CPU) -> u8 {
     cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
-    cpu.regs.sp += 2;
+    cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
 
     cpu.interrupts_countdown = 1;
     
@@ -276,7 +276,7 @@ pub fn jmp_hl(cpu : &mut CPU) -> u8 {
 
 /// -- Restarts. --
 pub fn rst(cpu : &mut CPU, step : u16) -> u8 {
-    cpu.regs.sp -= 2;
+    cpu.regs.sp = cpu.regs.sp.wrapping_sub(2);
     cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc);
     cpu.regs.pc = 0 + step;
 
