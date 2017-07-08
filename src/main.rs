@@ -8,6 +8,8 @@ use sdl2::keyboard::Keycode;
 
 mod core;
 
+use std::{thread, time};
+use std::time::Duration;
 use std::path::Path;
 
 use core::rom::GameROM;
@@ -54,6 +56,8 @@ fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     'running: loop {
+        let start_loop = time::Instant::now();
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..}
@@ -72,5 +76,13 @@ fn main() {
         canvas.clear();
         canvas.copy(&texture, None, None).unwrap();
         canvas.present();
+
+        let max_frame = Duration::from_millis(16);
+        let elapsed = start_loop.elapsed();
+        if elapsed < max_frame {
+            let sleep_time = max_frame - elapsed;
+
+            thread::sleep(sleep_time);
+        }
     }
 }
