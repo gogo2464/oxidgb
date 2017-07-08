@@ -43,13 +43,13 @@ impl Registers {
     }
 
     pub fn set_bc(&mut self, val : u16) {
-        self.a = ((val >> 8) & 0xFF) as u8;
-        self.f = ((val) & 0xFF) as u8;
+        self.b = ((val >> 8) & 0xFF) as u8;
+        self.c = ((val) & 0xFF) as u8;
     }
 
     pub fn set_de(&mut self, val : u16) {
-        self.a = ((val >> 8) & 0xFF) as u8;
-        self.f = ((val) & 0xFF) as u8;
+        self.d = ((val >> 8) & 0xFF) as u8;
+        self.e = ((val) & 0xFF) as u8;
     }
 
     pub fn set_hl(&mut self, val : u16) {

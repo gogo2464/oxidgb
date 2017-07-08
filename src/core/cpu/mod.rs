@@ -28,7 +28,12 @@ impl CPU {
         // Read instruction
         let current_instr = self.regs.pc;
 
-        println!("PC: {:04x}", current_instr);
+        println!("af = {:04x}", self.regs.get_af());
+        println!("bc = {:04x}", self.regs.get_bc());
+        println!("de = {:04x}", self.regs.get_de());
+        println!("hl = {:04x}", self.regs.get_hl());
+        println!("sp = {:04x}", self.regs.sp);
+        println!("pc = {:04x}", self.regs.pc);
 
         let mut raw_instruction = self.mem.read(current_instr) as u16;
 

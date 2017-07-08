@@ -8,9 +8,8 @@ use core::cpu::CPU;
 
 /// **0x18** - *JR n* - Jump to pc+n
 pub fn jr_n(cpu : &mut CPU) -> u8 {
-    let new_ptr = cpu.mem.read(cpu.regs.pc) as u16;
-
-    cpu.regs.pc = cpu.regs.pc.wrapping_add(new_ptr.wrapping_add(1));
+    let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
+    cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
 
     // TODO
     /*
@@ -25,8 +24,8 @@ pub fn jr_n(cpu : &mut CPU) -> u8 {
 /// **0x20** - *JR NZ,n* - Jump if Z flag is reset
 pub fn jr_nz_n(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_z() {
-        let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
+        let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
+        cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
@@ -37,8 +36,8 @@ pub fn jr_nz_n(cpu : &mut CPU) -> u8 {
 /// **0x28** - *JR Z,n* - Jump if Z flag is set
 pub fn jr_z_n(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_z() {
-        let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
+        let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
+        cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
@@ -49,8 +48,8 @@ pub fn jr_z_n(cpu : &mut CPU) -> u8 {
 /// **0x30** - *JR NC,n* - Jump if C flag is reset
 pub fn jr_nc_n(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_c() {
-        let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
+        let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
+        cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
@@ -61,8 +60,8 @@ pub fn jr_nc_n(cpu : &mut CPU) -> u8 {
 /// **0x38** - *JR C,n* - Jump if C flag is set
 pub fn jr_c_n(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_c() {
-        let n = cpu.mem.read(cpu.regs.pc) as u16;
-        cpu.regs.pc = cpu.regs.pc.wrapping_add(n.wrapping_add(1)) /* +1 for n size */;
+        let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
+        cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
         return 12 /* Cycles */;
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
