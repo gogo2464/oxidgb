@@ -54,6 +54,7 @@ pub fn xor_n(cpu : &mut CPU) -> u8 {
 /**
  * Helper to OR something into A.
  */
+#[inline]
 fn reg_or(registers : &mut Registers, y_val: u8) {
     let x_val = registers.a;
     let result = y_val | x_val;
@@ -101,6 +102,7 @@ pub fn or_n(cpu : &mut CPU) -> u8 {
 /**
  * Helper to AND something into A.
  */
+#[inline]
 fn reg_and(registers : &mut Registers, y_val: u8) {
     let x_val = registers.a;
     let result = x_val & y_val;

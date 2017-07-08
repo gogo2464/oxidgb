@@ -11,6 +11,7 @@ mod loads16;
 
 // ALU
 mod bitwise;
+mod increments;
 
 use core::cpu::CPU;
 
@@ -20,6 +21,7 @@ use core::cpu::instrs::loads::*;
 use core::cpu::instrs::loads16::*;
 
 use core::cpu::instrs::bitwise::*;
+use core::cpu::instrs::increments::*;
 
 #[inline]
 pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
@@ -27,27 +29,47 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0x00 => nop(cpu),
         0x01 => ld_bc_nnnn(cpu),
         0x02 => ld_pxx_x(cpu.regs.get_bc(), cpu.regs.a, cpu),
+        0x03 => inc_bc(cpu),
+        0x04 => inc_b(cpu),
+        0x05 => dec_b(cpu),
         0x06 => ld_b_n(cpu),
         0x08 => ld_pnn_sp(cpu),
         0x0A => ld_n_pxx(&cpu.mem, cpu.regs.get_bc(), &mut cpu.regs.a),
+        0x0B => dec_bc(cpu),
+        0x0C => inc_c(cpu),
+        0x0D => dec_c(cpu),
         0x0E => ld_c_n(cpu),
         0x10 => stop(cpu),
         0x11 => ld_de_nn(cpu),
         0x12 => ld_pxx_x(cpu.regs.get_de(), cpu.regs.a, cpu),
+        0x13 => inc_de(cpu),
+        0x14 => inc_d(cpu),
+        0x15 => dec_d(cpu),
         0x16 => ld_d_n(cpu),
+        0x17 => daa(cpu),
         0x18 => jr_n(cpu),
         0x1A => ld_n_pxx(&cpu.mem, cpu.regs.get_de(), &mut cpu.regs.a),
+        0x1B => dec_de(cpu),
+        0x1C => inc_e(cpu),
+        0x1D => dec_e(cpu),
         0x1E => ld_e_n(cpu),
         0x20 => jr_nz_n(cpu),
         0x21 => ld_hl_nnnn(cpu),
         0x22 => ldi_phl_a(cpu),
+        0x23 => inc_hl(cpu),
+        0x24 => inc_h(cpu),
+        0x25 => dec_h(cpu),
         0x26 => ld_h_n(cpu),
-        0x17 => daa(cpu),
         0x28 => jr_z_n(cpu),
         0x2A => ldi_a_phl(cpu),
+        0x2B => dec_hl(cpu),
+        0x2C => inc_l(cpu),
+        0x2D => dec_l(cpu),
         0x2F => cpl(cpu),
         0x31 => ld_sp_nn(cpu),
         0x32 => ldd_phl_a(cpu),
+        0x34 => inc_phl(cpu),
+        0x35 => dec_phl(cpu),
         0x37 => scf(cpu),
         0x3F => ccf(cpu),
         0x2E => ld_l_n(cpu),
@@ -55,6 +77,8 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0x36 => ld_phl_n(cpu),
         0x38 => jr_c_n(cpu),
         0x3A => ldd_a_phl(cpu),
+        0x3C => inc_a(cpu),
+        0x3D => dec_a(cpu),
         0x3E => ld_a_n(cpu),
         0x40 => ld_x_y(cpu.regs.b, &mut cpu.regs.b),
         0x41 => ld_x_y(cpu.regs.c, &mut cpu.regs.b),
