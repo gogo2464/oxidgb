@@ -24,13 +24,13 @@ pub struct CPU {
 
 impl CPU {
     /// Ticks the CPU + other components one instruction.
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self) -> bool {
         // Read instruction
         let current_instr = self.regs.pc;
 
         let mut raw_instruction = self.mem.read(current_instr) as u16;
 
-        println!("{:02X} = {:02X}", current_instr, raw_instruction);
+        //println!("{:02X} = {:02X}", current_instr, raw_instruction);
 
         self.regs.pc = self.regs.pc.wrapping_add(1);
 
@@ -47,11 +47,15 @@ impl CPU {
         println!("sp = {:04x}", self.regs.sp);
         println!("pc = {:04x}", self.regs.pc);*/
 
-        if self.regs.pc == 0x0236 {
-            panic!();
-        }
+        let cycles = execute_instruction(self, raw_instruction, current_instr);
 
-        execute_instruction(self, raw_instruction, current_instr);
+        // After
+        return self.mem.gpu.step(cycles as u32);
+    }
+
+    /// Runs a iteration of the CPU
+    pub fn run(&mut self) {
+        while !self.tick() {}
     }
 
     /// Builds a CPU from the specified memory module.

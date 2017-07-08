@@ -7,17 +7,19 @@
 use std::char;
 
 use core::rom::GameROM;
+use core::gpu::GPU;
 
 pub struct GBMemory {
     pub rom : GameROM,
     pub ram : [u8; 8192],
-    pub high_ram : [u8; 127 /* - interrupt enable reg */]
+    pub high_ram : [u8; 127 /* - interrupt enable reg */],
+    pub gpu : GPU
 }
 
 impl GBMemory {
     /// Reads a value from memory. 0xFF if invalid.
     pub fn read(&self, ptr : u16) -> u8 {
-        println!("${:04X}: Read", ptr);
+        //println!("${:04X}: Read", ptr);
         match ptr {
             0xFFFF => { // Interrupt enable reg
                 //println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
@@ -38,7 +40,10 @@ impl GBMemory {
                 //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
                 return 0xFF;
             }
-            0xE000 ... 0xFE9F => { // RAM Echo
+            0xFE00 ... 0xFE9F => { // OAM
+                return self.gpu.oam[(ptr - 0xFE00) as usize];
+            }
+            0xE000 ... 0xFDFF => { // RAM Echo
                 return self.ram[(ptr - 0xE000) as usize];
             }
             0xC000 ... 0xDFFF => { // Internal RAM
@@ -48,8 +53,7 @@ impl GBMemory {
                 return self.rom.read_ram(ptr - 0xA000);
             }
             0x8000 ... 0x9FFF => { // GPU
-                //println!("TODO: Whats a GPU? {:04x}", ptr);
-                return 0xFF;
+                return self.gpu.vram[(ptr - 0x8000) as usize];
             }
             0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
                 return self.rom.read(ptr);
@@ -62,7 +66,8 @@ impl GBMemory {
 
     /// Writes a value to a memory location if possible.
     pub fn write(&mut self, ptr : u16, val : u8) {
-        println!("${:04X}: Write ${:02X}", ptr, val);
+        //println!("${:04X}: Write ${:02X}", ptr, val);
+
         match ptr {
             0xFFFF => { // Interrupt enable reg
                 //println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
@@ -82,7 +87,10 @@ impl GBMemory {
             0xFEA0 ... 0xFEFF => { // Unusable
                 //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
             }
-            0xE000 ... 0xFE9F => { // RAM Echo
+            0xFE00 ... 0xFE9F => { // OAM
+                self.gpu.oam[(ptr - 0xFE00) as usize] = val;
+            }
+            0xE000 ... 0xFD00 => { // RAM Echo
                 self.ram[(ptr - 0xE000) as usize] = val;
             }
             0xC000 ... 0xDFFF => { // Internal RAM
@@ -92,7 +100,7 @@ impl GBMemory {
                 self.rom.write_ram(ptr - 0xA000, val);
             }
             0x8000 ... 0x9FFF => { // GPU
-                //println!("TODO: Whats a GPU? {:04x} = {:02x}", ptr, val);
+                self.gpu.vram[(ptr - 0x8000) as usize] = val;
             }
             0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
                 self.rom.write(ptr, val);
@@ -119,7 +127,8 @@ impl GBMemory {
         return GBMemory {
             rom : rom,
             ram : [0; 8192],
-            high_ram : [0; 127]
+            high_ram : [0; 127],
+            gpu : GPU::build()
         }
     }
 }
