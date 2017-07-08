@@ -4,10 +4,9 @@
  * Handles the Gameboy's memory bus.
 **/
 
-use std::char;
-
 use core::rom::GameROM;
 use core::gpu::GPU;
+use core::io;
 
 pub struct GBMemory {
     pub rom : GameROM,
@@ -22,7 +21,7 @@ impl GBMemory {
         //println!("${:04X}: Read", ptr);
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                //println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
+                println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
                 return 0xFF;
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
@@ -33,8 +32,7 @@ impl GBMemory {
                 return 0xFF;
             }
             0xFF00 ... 0xFF4B => { // I/O Registers
-                //println!("TODO: READ: IO registers unimplemented: {:04x}", ptr);
-                return 0xFF;
+                return io::read(self, (ptr & 0xFF) as u8);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
                 //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
@@ -70,7 +68,7 @@ impl GBMemory {
 
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                //println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
+                println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
                 self.high_ram[(ptr - 0xFF80) as usize] = val;
@@ -79,10 +77,7 @@ impl GBMemory {
                 //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
             }
             0xFF00 ... 0xFF4B => { // I/O Registers
-                if ptr == 0xFF01 {
-                    //print!("{}", char::from_u32(val as u32).unwrap());
-                }
-                //println!("TODO: WRITE: IO registers unimplemented: {:04x} = {:02x}", ptr, val);
+                io::write(self, (ptr & 0xFF) as u8, val);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
                 //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
