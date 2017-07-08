@@ -6,6 +6,8 @@
 
 use core::cpu::CPU;
 
+use core::cpu::instrs::utils::*;
+
 /// **0x18** - *JR n* - Jump to pc+n
 pub fn jr_n(cpu : &mut CPU) -> u8 {
     let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
@@ -24,8 +26,8 @@ pub fn jr_n(cpu : &mut CPU) -> u8 {
 /// **0x20** - *JR NZ,n* - Jump if Z flag is reset
 pub fn jr_nz_n(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_z() {
-        let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
-        cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
+        let n = get_n(cpu) as i8;
+        cpu.regs.pc = (cpu.regs.pc as i16 + n as i16) as u16;
         return 12 /* Cycles */;
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);

@@ -11,7 +11,7 @@ use core::mem::GBMemory;
 use core::cpu::CPU;
 
 fn main() {
-    println!("Oxidgb v0.1");
+    //println!("Oxidgb v0.1");
 
     // Load game ROM
     let rom = GameROM::build(Path::new("jp.gb"));
@@ -23,8 +23,8 @@ fn main() {
     let mut cpu = CPU::build(memory);
 
 
-    println!("Opening ROM: {}", cpu.mem.rom.get_name());
-    println!("Mapper type: {:?}", cpu.mem.rom.get_cart_type());
+    //println!("Opening ROM: {}", cpu.mem.rom.get_name());
+    //println!("Mapper type: {:?}", cpu.mem.rom.get_cart_type());
 
     loop {
         cpu.tick()

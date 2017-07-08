@@ -28,14 +28,9 @@ impl CPU {
         // Read instruction
         let current_instr = self.regs.pc;
 
-        println!("af = {:04x}", self.regs.get_af());
-        println!("bc = {:04x}", self.regs.get_bc());
-        println!("de = {:04x}", self.regs.get_de());
-        println!("hl = {:04x}", self.regs.get_hl());
-        println!("sp = {:04x}", self.regs.sp);
-        println!("pc = {:04x}", self.regs.pc);
-
         let mut raw_instruction = self.mem.read(current_instr) as u16;
+
+        println!("{:02X} = {:02X}", current_instr, raw_instruction);
 
         self.regs.pc = self.regs.pc.wrapping_add(1);
 
@@ -44,7 +39,17 @@ impl CPU {
             self.regs.pc = self.regs.pc.wrapping_add(1);
         }
 
-        println!("Read instruction: {:04x}", raw_instruction);
+        /*println!("Read instruction: {:04x}", raw_instruction);
+        println!("af = {:04x}", self.regs.get_af());
+        println!("bc = {:04x}", self.regs.get_bc());
+        println!("de = {:04x}", self.regs.get_de());
+        println!("hl = {:04x}", self.regs.get_hl());
+        println!("sp = {:04x}", self.regs.sp);
+        println!("pc = {:04x}", self.regs.pc);*/
+
+        if self.regs.pc == 0x0236 {
+            panic!();
+        }
 
         execute_instruction(self, raw_instruction, current_instr);
     }

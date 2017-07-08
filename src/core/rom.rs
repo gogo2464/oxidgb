@@ -100,7 +100,7 @@ impl GameROM {
 
         let read = file.read_to_end(&mut data).unwrap();
 
-        println!("Read: {}, expected: {}", read, file_size);
+        //println!("Read: {}, expected: {}", read, file_size);
 
         return GameROM {
             backing_data : data

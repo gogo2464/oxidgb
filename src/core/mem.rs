@@ -4,6 +4,8 @@
  * Handles the Gameboy's memory bus.
 **/
 
+use std::char;
+
 use core::rom::GameROM;
 
 pub struct GBMemory {
@@ -15,24 +17,25 @@ pub struct GBMemory {
 impl GBMemory {
     /// Reads a value from memory. 0xFF if invalid.
     pub fn read(&self, ptr : u16) -> u8 {
+        println!("${:04X}: Read", ptr);
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
+                //println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
                 return 0xFF;
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
                 return self.high_ram[(ptr - 0xFF80) as usize];
             }
             0xFF4C ... 0xFF7F => { // Unusable
-                println!("WARN: Reading from unreadable memory: {:04x}", ptr);
+                //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
                 return 0xFF;
             }
             0xFF00 ... 0xFF4B => { // I/O Registers
-                println!("TODO: READ: IO registers unimplemented: {:04x}", ptr);
+                //println!("TODO: READ: IO registers unimplemented: {:04x}", ptr);
                 return 0xFF;
             }
             0xFEA0 ... 0xFEFF => { // Unusable
-                println!("WARN: Reading from unreadable memory: {:04x}", ptr);
+                //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
                 return 0xFF;
             }
             0xE000 ... 0xFE9F => { // RAM Echo
@@ -45,7 +48,7 @@ impl GBMemory {
                 return self.rom.read_ram(ptr - 0xA000);
             }
             0x8000 ... 0x9FFF => { // GPU
-                println!("TODO: Whats a GPU? {:04x}", ptr);
+                //println!("TODO: Whats a GPU? {:04x}", ptr);
                 return 0xFF;
             }
             0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
@@ -59,21 +62,25 @@ impl GBMemory {
 
     /// Writes a value to a memory location if possible.
     pub fn write(&mut self, ptr : u16, val : u8) {
+        println!("${:04X}: Write ${:02X}", ptr, val);
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
+                //println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
                 self.high_ram[(ptr - 0xFF80) as usize] = val;
             }
             0xFF4C ... 0xFF7F => { // Unusable
-                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
+                //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
             }
             0xFF00 ... 0xFF4B => { // I/O Registers
-                println!("TODO: WRITE: IO registers unimplemented: {:04x} = {:02x}", ptr, val);
+                if ptr == 0xFF01 {
+                    //print!("{}", char::from_u32(val as u32).unwrap());
+                }
+                //println!("TODO: WRITE: IO registers unimplemented: {:04x} = {:02x}", ptr, val);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
-                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
+                //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
             }
             0xE000 ... 0xFE9F => { // RAM Echo
                 self.ram[(ptr - 0xE000) as usize] = val;
@@ -85,7 +92,7 @@ impl GBMemory {
                 self.rom.write_ram(ptr - 0xA000, val);
             }
             0x8000 ... 0x9FFF => { // GPU
-                println!("TODO: Whats a GPU? {:04x} = {:02x}", ptr, val);
+                //println!("TODO: Whats a GPU? {:04x} = {:02x}", ptr, val);
             }
             0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
                 self.rom.write(ptr, val);
