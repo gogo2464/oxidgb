@@ -90,7 +90,7 @@ impl GBMemory {
             0xFE00 ... 0xFE9F => { // OAM
                 self.gpu.oam[(ptr - 0xFE00) as usize] = val;
             }
-            0xE000 ... 0xFD00 => { // RAM Echo
+            0xE000 ... 0xFDFF => { // RAM Echo
                 self.ram[(ptr - 0xE000) as usize] = val;
             }
             0xC000 ... 0xDFFF => { // Internal RAM

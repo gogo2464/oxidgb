@@ -19,7 +19,7 @@ fn main() {
     println!("Oxidgb v0.1");
 
     // Load game ROM
-    let rom = GameROM::build(Path::new("jp.gb"));
+    let rom = GameROM::build(Path::new("sprite_test_01.gb"));
 
     // Build memory
     let memory = GBMemory::build(rom);

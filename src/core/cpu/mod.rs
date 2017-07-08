@@ -5,6 +5,7 @@
 **/
 
 pub mod regs;
+pub mod interrupts;
 
 mod instrs; // Private to the CPU implementation
 
@@ -12,6 +13,7 @@ use core::mem::GBMemory;
 
 use core::cpu::regs::Registers;
 use core::cpu::instrs::execute_instruction;
+use core::cpu::interrupts::InterruptType;
 
 pub struct CPU {
     pub regs : Registers,
@@ -50,12 +52,42 @@ impl CPU {
         let cycles = execute_instruction(self, raw_instruction, current_instr);
 
         // After
-        return self.mem.gpu.step(cycles as u32);
+        let gpu_result = self.mem.gpu.step(cycles as u32);
+
+        if gpu_result {
+            // TODO: Don't actually use this pattern
+            self.throw_interrupt(InterruptType::VBLANK);
+        }
+
+        return gpu_result;
     }
 
     /// Runs a iteration of the CPU
     pub fn run(&mut self) {
         while !self.tick() {}
+    }
+
+    /// Immediately throws a interrupt.
+    pub fn throw_interrupt(&mut self, interrupt : InterruptType) {
+        if !self.interrupts_enabled {
+            //println!("Unable to throw interrupt when it is not active!");
+            return;
+        }
+
+        self.interrupts_enabled = false;
+
+        // Push PC to stack
+        self.regs.sp -= 2;
+        self.mem.write_short(self.regs.sp, self.regs.pc);
+
+        // Jump to interrupt service
+        self.regs.pc = match interrupt {
+            InterruptType::VBLANK => 0x0040,
+            InterruptType::LCDC   => 0x0048,
+            InterruptType::TIMER  => 0x0050,
+            InterruptType::SERIAL => 0x0058,
+            InterruptType::KEYPAD => 0x0060
+        }
     }
 
     /// Builds a CPU from the specified memory module.

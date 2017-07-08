@@ -193,3 +193,17 @@ pub fn dec_hl(cpu : &mut CPU) -> u8 {
     cpu.regs.set_hl(value);
     return 8 /* Cycles */;
 }
+
+/// **0x33** - *INC sp* - Increment register hl
+pub fn inc_sp(cpu : &mut CPU) -> u8 {
+    let value = cpu.regs.sp.wrapping_add(1);
+    cpu.regs.sp = value;
+    return 8 /* Cycles */;
+}
+
+/// **0x3B** - *DEC sp* - Decrement register hl
+pub fn dec_sp(cpu : &mut CPU) -> u8 {
+    let value = cpu.regs.sp.wrapping_sub(1);
+    cpu.regs.sp = value;
+    return 8 /* Cycles */;
+}
