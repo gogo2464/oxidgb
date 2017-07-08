@@ -67,8 +67,16 @@ impl GameROM {
     }
 
     pub fn read_ram(&self, ptr : u16) -> u8 {
-        println!("WARN: RAM not implemented: {:04x}", ptr);
+        println!("WARN: Cart RAM not implemented: {:04x}", ptr);
         return 0xFF;
+    }
+
+    pub fn write(&self, ptr : u16, val : u8) {
+        println!("WARN: Writing to ROM: {:04x} = {:02x}", ptr, val);
+    }
+
+    pub fn write_ram(&self, ptr : u16, val : u8) {
+        println!("WARN: Cart RAM not implemented: {:04x} = {:02x}", ptr, val);
     }
 
     /// Builds a new ROM from the specified file. Expects

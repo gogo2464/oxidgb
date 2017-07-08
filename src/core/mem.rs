@@ -28,7 +28,7 @@ impl GBMemory {
                 return 0xFF;
             }
             0xFF00 ... 0xFF4B => { // I/O Registers
-                println!("TODO: IO registers unimplemented: {:04x}", ptr);
+                println!("TODO: READ: IO registers unimplemented: {:04x}", ptr);
                 return 0xFF;
             }
             0xFEA0 ... 0xFEFF => { // Unusable
@@ -59,7 +59,41 @@ impl GBMemory {
 
     /// Writes a value to a memory location if possible.
     pub fn write(&mut self, ptr : u16, val : u8) {
-        println!("Writes not implemented: {:04x} = {:02x}", ptr, val);
+        match ptr {
+            0xFFFF => { // Interrupt enable reg
+                println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
+            }
+            0xFF80 ... 0xFFFE => { // High internal RAM
+                self.high_ram[(ptr - 0xFF80) as usize] = val;
+            }
+            0xFF4C ... 0xFF7F => { // Unusable
+                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
+            }
+            0xFF00 ... 0xFF4B => { // I/O Registers
+                println!("TODO: WRITE: IO registers unimplemented: {:04x} = {:02x}", ptr, val);
+            }
+            0xFEA0 ... 0xFEFF => { // Unusable
+                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
+            }
+            0xE000 ... 0xFE9F => { // RAM Echo
+                self.ram[(ptr - 0xE000) as usize] = val;
+            }
+            0xC000 ... 0xDFFF => { // Internal RAM
+                self.ram[(ptr - 0xC000) as usize] = val;
+            }
+            0xA000 ... 0xBFFF => { // Switchable RAM
+                self.rom.write_ram(ptr - 0xA000, val);
+            }
+            0x8000 ... 0x9FFF => { // GPU
+                println!("TODO: Whats a GPU? {:04x} = {:02x}", ptr, val);
+            }
+            0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
+                self.rom.write(ptr, val);
+            }
+            _ => {
+                panic!("Programmer error: {:04x} = {:02x} was not matched!", ptr, val);
+            }
+        }
     }
 
     /// Reads a short. 0xFFFF if invalid.
