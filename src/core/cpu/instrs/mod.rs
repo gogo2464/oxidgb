@@ -12,6 +12,7 @@ mod loads16;
 // ALU
 mod bitrotation;
 mod bitwise;
+mod comparsions;
 mod increments;
 
 use core::cpu::CPU;
@@ -23,6 +24,7 @@ use core::cpu::instrs::loads16::*;
 
 use core::cpu::instrs::bitrotation::*;
 use core::cpu::instrs::bitwise::*;
+use core::cpu::instrs::comparsions::*;
 use core::cpu::instrs::increments::*;
 
 #[inline]
@@ -171,6 +173,14 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xB5 => or(cpu.regs.l, cpu),
         0xB6 => or_phl(cpu),
         0xB7 => or(cpu.regs.a, cpu),
+        0xB8 => cp(cpu.regs.b, cpu),
+        0xB9 => cp(cpu.regs.c, cpu),
+        0xBA => cp(cpu.regs.d, cpu),
+        0xBB => cp(cpu.regs.e, cpu),
+        0xBC => cp(cpu.regs.h, cpu),
+        0xBD => cp(cpu.regs.l, cpu),
+        0xBE => cp_phl(cpu),
+        0xBF => cp(cpu.regs.a, cpu),
         0xC2 => jp_nz_nn(cpu),
         0xC3 => jmp_nn(cpu),
         0xD2 => jp_nc_nn(cpu),
@@ -227,6 +237,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xFB => ei(cpu),
         0xFC => bad_instruction(instr),
         0xFD => bad_instruction(instr),
+        0xFE => cp_n(cpu),
         0xFF => rst(cpu, 0x38),
 
         _ => {
