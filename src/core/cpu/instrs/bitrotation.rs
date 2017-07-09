@@ -20,7 +20,7 @@ fn rl_helper(cpu : &mut CPU, value : u8) -> u8 {
     return result;
 }
 
-/// **0x1F** - *RLA* - Rotate a left through Carry.
+/// **0x10** - *RLA* - Rotate a left through Carry.
 pub fn rla(cpu : &mut CPU) -> u8 {
     let current_value = cpu.regs.a;
     cpu.regs.a = rl_helper(cpu, current_value);
@@ -87,3 +87,81 @@ rr!(rr_e, e);
 rr!(rr_h, h);
 rr!(rr_l, l);
 rr!(rr_a, a);
+
+/// Helper for RLC operations.
+#[inline]
+fn rlc_helper(cpu : &mut CPU, value : u8) -> u8 {
+    let result = ((value << 1) & !1) | ((value >> 7) & 0x1);
+
+    cpu.regs.f = 0;
+    cpu.regs.set_flag_c((value >> 7) & 0x1 == 1);
+    cpu.regs.set_flag_z(result == 0);
+
+    return result;
+}
+
+/// **0x07** - *RLCA* - Rotate a left. Bit 7 into Carry.
+pub fn rlca(cpu : &mut CPU) -> u8 {
+    let current_value = cpu.regs.a;
+    cpu.regs.a = rlc_helper(cpu, current_value);
+    cpu.regs.set_flag_z(false);
+
+    return 4 /* Cycles */;
+}
+
+macro_rules! rlc {
+    ($func:ident, $reg:ident) => (
+        pub fn $func(cpu : &mut CPU) -> u8 {
+            let current_value = cpu.regs.$reg;
+            cpu.regs.$reg = rlc_helper(cpu, current_value);
+            return 8 /* Cycles */;
+        }
+    )
+}
+
+rlc!(rlc_b, b);
+rlc!(rlc_c, c);
+rlc!(rlc_d, d);
+rlc!(rlc_e, e);
+rlc!(rlc_h, h);
+rlc!(rlc_l, l);
+rlc!(rlc_a, a);
+
+/// Helper for RRC operations.
+#[inline]
+fn rrc_helper(cpu : &mut CPU, value : u8) -> u8 {
+    let result = ((value >> 1) & !(1 << 7)) | ((value & 1) << 7);
+
+    cpu.regs.f = 0;
+    cpu.regs.set_flag_c(value & 0x1 == 1);
+    cpu.regs.set_flag_z(result == 0);
+
+    return result;
+}
+
+/// **0x07** - *RRCA* - Rotate a left. Bit 7 into Carry.
+pub fn rrca(cpu : &mut CPU) -> u8 {
+    let current_value = cpu.regs.a;
+    cpu.regs.a = rrc_helper(cpu, current_value);
+    cpu.regs.set_flag_z(false);
+
+    return 4 /* Cycles */;
+}
+
+macro_rules! rrc {
+    ($func:ident, $reg:ident) => (
+        pub fn $func(cpu : &mut CPU) -> u8 {
+            let current_value = cpu.regs.$reg;
+            cpu.regs.$reg = rrc_helper(cpu, current_value);
+            return 8 /* Cycles */;
+        }
+    )
+}
+
+rrc!(rrc_b, b);
+rrc!(rrc_c, c);
+rrc!(rrc_d, d);
+rrc!(rrc_e, e);
+rrc!(rrc_h, h);
+rrc!(rrc_l, l);
+rrc!(rrc_a, a);
