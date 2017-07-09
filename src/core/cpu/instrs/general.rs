@@ -132,3 +132,24 @@ pub fn sub(x : u8, cpu : &mut CPU) -> u8 {
 
     return 4 /* Cycles */;
 }
+
+/// **0xDE** - *SBC n* -  Subtract n + Carry from a.
+pub fn sbc_n(cpu : &mut CPU) -> u8 {
+    let prev_value = cpu.regs.a;
+    let value = get_n(cpu);
+    let flag = if cpu.regs.get_flag_c() {1} else {0};
+    let new_value = prev_value
+        .wrapping_sub(value)
+        .wrapping_sub(flag);
+
+    cpu.regs.a = new_value;
+
+    cpu.regs.set_flag_z(new_value == 0);
+    cpu.regs.set_flag_n(true);
+    cpu.regs.set_flag_h((prev_value as i16 & 0x0f)
+                        - (value as i16 & 0x0f) - (flag as i16) < 0);
+    cpu.regs.set_flag_c((prev_value as i16)
+                        - (value as i16) - (flag as i16) < 0);
+
+    return 8 /* Cycles */;
+}

@@ -234,6 +234,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xD9 => reti(cpu),
         0xDB => bad_instruction(instr),
         0xDD => bad_instruction(instr),
+        0xDE => sbc_n(cpu),
         0xDF => rst(cpu, 0x18),
         0xE0 => ldh_pn_a(cpu),
         0xE1 => pop_hl(cpu),
