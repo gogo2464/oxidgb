@@ -98,7 +98,7 @@ impl GameROM {
             Ok(file) => file,
         };
 
-        let read = file.read_to_end(&mut data).unwrap();
+        file.read_to_end(&mut data).unwrap();
 
         //println!("Read: {}, expected: {}", read, file_size);
 

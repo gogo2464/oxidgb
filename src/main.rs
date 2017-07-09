@@ -1,12 +1,14 @@
 extern crate sdl2;
+extern crate nfd;
+
+mod core;
 
 use sdl2::event::Event;
 use sdl2::pixels;
 use sdl2::pixels::PixelFormatEnum;
-use sdl2::rect::Rect;
 use sdl2::keyboard::Keycode;
 
-mod core;
+use nfd::Response;
 
 use std::{thread, time};
 use std::time::Duration;
@@ -18,10 +20,19 @@ use core::cpu::CPU;
 use core::gpu::PITCH;
 
 fn main() {
-    println!("Oxidgb v0.1");
+    //println!("Oxidgb v0.1");
+
+    // TODO: Commandline arguments parser
+    let result = match nfd::open_file_dialog(None, None).unwrap() {
+        Response::Okay(file_path) => file_path,
+        _ => {
+            println!("No file selected.");
+            return;
+        },
+    };
 
     // Load game ROM
-    let rom = GameROM::build(Path::new("lyc.gb"));
+    let rom = GameROM::build(Path::new(&result));
 
     // Build memory
     let memory = GBMemory::build(rom);
@@ -29,8 +40,8 @@ fn main() {
     // Build CPU
     let mut cpu = CPU::build(memory);
 
-    println!("Opening ROM: {}", cpu.mem.rom.get_name());
-    println!("Mapper type: {:?}", cpu.mem.rom.get_cart_type());
+    //println!("Opening ROM: {}", cpu.mem.rom.get_name());
+    //println!("Mapper type: {:?}", cpu.mem.rom.get_cart_type());
 
     // Build a window
     let sdl_context = sdl2::init().unwrap();
@@ -71,7 +82,7 @@ fn main() {
         // The rest of the game loop goes here...
         cpu.run();
 
-        texture.update(None, &cpu.mem.gpu.pixel_data, 160 * PITCH);
+        texture.update(None, &cpu.mem.gpu.pixel_data, 160 * PITCH).unwrap();
 
         canvas.clear();
         canvas.copy(&texture, None, None).unwrap();

@@ -24,21 +24,21 @@ pub fn daa(cpu : &mut CPU) -> u8 {
     // Uses Blarrg's implementation
     if !cpu.regs.get_flag_n() {
         if cpu.regs.get_flag_c() || value > 0x99 {
-            value += 0x60;
+            value = value.wrapping_add(0x60);
             cpu.regs.set_flag_c(true);
         }
 
         if cpu.regs.get_flag_h() || value & 0xF > 0x9 {
-            value += 0x06;
+            value = value.wrapping_add(0x06);
             cpu.regs.set_flag_h(false);
         }
     } else {
         if cpu.regs.get_flag_c() {
-            value += 0xA0;
+            value = value.wrapping_add(0xA0);
         }
 
         if cpu.regs.get_flag_h() {
-            value += 0xFA;
+            value = value.wrapping_add(0xFA);
             cpu.regs.set_flag_h(false);
         }
     }

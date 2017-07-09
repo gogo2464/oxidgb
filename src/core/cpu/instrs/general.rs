@@ -27,7 +27,7 @@ pub fn add_a_n(cpu : &mut CPU) -> u8 {
 }
 
 /**
- * **0xC6** - *SUB a,#* - Subtract # to a.
+ * **0xD6** - *SUB a,#* - Subtract # to a.
  */
 pub fn sub_a_n(cpu : &mut CPU) -> u8 {
     let prev_value = cpu.regs.a;
@@ -38,7 +38,7 @@ pub fn sub_a_n(cpu : &mut CPU) -> u8 {
 
     cpu.regs.set_flag_z(new_value == 0);
     cpu.regs.set_flag_n(true);
-    cpu.regs.set_flag_h(((value as i16 & 0x0F) - (prev_value as i16 & 0x0F)) < 0);
+    cpu.regs.set_flag_h(((prev_value as i16 & 0x0F) - (value as i16 & 0x0F)) < 0);
     cpu.regs.set_flag_c(((prev_value as i16) - (value as i16)) < 0);
 
     return 8 /* Cycles */;
@@ -75,10 +75,13 @@ pub fn adc_a_n(cpu : &mut CPU) -> u8 {
     cpu.regs.f = 0;
     cpu.regs.set_flag_z(new_value == 0);
 
-    cpu.regs.set_flag_h((old_value ^ new_value ^ value & 0x10) == 0x10);
-    cpu.regs.set_flag_c(((old_value as u16)
+    cpu.regs.set_flag_h((((old_value as u16)
             ^ unwrapped_value
-            ^ (value as u16)
+            ^ (value as u16))
+            & 0x10) == 0x10);
+    cpu.regs.set_flag_c((((old_value as u16)
+            ^ unwrapped_value
+            ^ (value as u16))
             & 0x100) == 0x100);
 
     return 8 /* Cycles */;
@@ -96,7 +99,7 @@ pub fn sub(x : u8, cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_z(new_value == 0);
     cpu.regs.set_flag_n(true);
     cpu.regs.set_flag_h((prev_value & 0xF) < (new_value & 0xF));
-    cpu.regs.set_flag_c(new_value < 0);
+    cpu.regs.set_flag_c((prev_value as i16 - x as i16) < 0);
 
     return 4 /* Cycles */;
 }

@@ -131,8 +131,8 @@ pub fn ld_pnn_a(cpu : &mut CPU) -> u8 {
 
 /// **0xF0** - *LDH a,(n)* - Put memory address *($FF00+n) in A
 pub fn ldh_a_pn(cpu : &mut CPU) -> u8 {
-    let value = 0xFF00 + ((cpu.mem.read(cpu.regs.pc) as u16) & 0xFF);
-    //println("New value: $value = ${cpu.mem.read(value)}")
+    let value = 0xFF00 + (cpu.mem.read(cpu.regs.pc) as u16 & 0xFF);
+    //println!("New value: {:04x}", value);
     cpu.regs.a = cpu.mem.read(value);
     cpu.regs.pc += 1;
 

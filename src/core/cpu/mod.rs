@@ -36,18 +36,18 @@ impl CPU {
 
         self.regs.pc = self.regs.pc.wrapping_add(1);
 
+        /*println!("Read instruction {:02X} from {:04X}", raw_instruction & 0xFF, current_instr);
+        println!("af = {:04X}", self.regs.get_af());
+        println!("bc = {:04X}", self.regs.get_bc());
+        println!("de = {:04X}", self.regs.get_de());
+        println!("hl = {:04X}", self.regs.get_hl());
+        println!("sp = {:04X}", self.regs.sp);
+        println!("pc = {:04X}", self.regs.pc);*/
+
         if raw_instruction == 0xCB {
-            raw_instruction = (raw_instruction << 8) | (self.mem.read(current_instr + 1) as u16);
+            raw_instruction = ((self.mem.read(current_instr + 1) as u16) << 8) | (raw_instruction);
             self.regs.pc = self.regs.pc.wrapping_add(1);
         }
-
-        /*println!("Read instruction: {:04x}", raw_instruction);
-        println!("af = {:04x}", self.regs.get_af());
-        println!("bc = {:04x}", self.regs.get_bc());
-        println!("de = {:04x}", self.regs.get_de());
-        println!("hl = {:04x}", self.regs.get_hl());
-        println!("sp = {:04x}", self.regs.sp);
-        println!("pc = {:04x}", self.regs.pc);*/
 
         let cycles = execute_instruction(self, raw_instruction, current_instr);
 
@@ -56,7 +56,7 @@ impl CPU {
 
         if gpu_result {
             // TODO: Don't actually use this pattern
-            self.throw_interrupt(InterruptType::VBLANK);
+            //self.throw_interrupt(InterruptType::VBLANK);
         }
 
         return gpu_result;

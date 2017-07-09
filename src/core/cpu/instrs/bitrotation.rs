@@ -10,7 +10,7 @@ use core::cpu::CPU;
 pub fn rra(cpu : &mut CPU) -> u8 {
     let value = cpu.regs.a;
 
-    let old_flag = if cpu.regs.get_flag_c() {1 >> 7} else {0};
+    let old_flag = if cpu.regs.get_flag_c() {1 << 7} else {0};
 
     cpu.regs.a = (value >> 1) | old_flag;
 
@@ -24,7 +24,7 @@ pub fn rra(cpu : &mut CPU) -> u8 {
 /// Helper for RR operations.
 #[inline]
 fn rr_helper(cpu : &mut CPU, value : u8) -> u8 {
-    let old_flag = if cpu.regs.get_flag_c() {1 >> 7} else {0};
+    let old_flag = if cpu.regs.get_flag_c() {1 << 7} else {0};
 
     let result = (value >> 1) | old_flag;
 
@@ -37,7 +37,7 @@ fn rr_helper(cpu : &mut CPU, value : u8) -> u8 {
 
 macro_rules! rr {
     ($func:ident, $reg:ident) => (
-        fn $func(cpu : &mut CPU) -> u8 {
+        pub fn $func(cpu : &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             cpu.regs.$reg = rr_helper(cpu, current_value);
             return 8 /* Cycles */;

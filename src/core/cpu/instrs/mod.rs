@@ -14,6 +14,8 @@ mod loads16;
 // ALU
 mod bit;
 mod bitrotation;
+mod bitshift;
+mod bitswap;
 mod bitwise;
 mod comparsions;
 mod general;
@@ -28,6 +30,8 @@ use core::cpu::instrs::loads16::*;
 
 use core::cpu::instrs::bit::*;
 use core::cpu::instrs::bitrotation::*;
+use core::cpu::instrs::bitshift::*;
+use core::cpu::instrs::bitswap::*;
 use core::cpu::instrs::bitwise::*;
 use core::cpu::instrs::comparsions::*;
 use core::cpu::instrs::general::*;
@@ -57,7 +61,6 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0x14 => inc_d(cpu),
         0x15 => dec_d(cpu),
         0x16 => ld_d_n(cpu),
-        0x17 => daa(cpu),
         0x18 => jr_n(cpu),
         0x19 => add_hl_x(cpu.regs.get_de(), cpu),
         0x1A => ld_n_pxx(&cpu.mem, cpu.regs.get_de(), &mut cpu.regs.a),
@@ -73,6 +76,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0x24 => inc_h(cpu),
         0x25 => dec_h(cpu),
         0x26 => ld_h_n(cpu),
+        0x27 => daa(cpu),
         0x28 => jr_z_n(cpu),
         0x29 => add_hl_x(cpu.regs.get_hl(), cpu),
         0x2A => ldi_a_phl(cpu),
@@ -272,9 +276,93 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
 #[inline]
 fn cb(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
     return match (instr >> 8) & 0xFF {
-
+        0x18 => rr_b(cpu),
+        0x19 => rr_c(cpu),
+        0x1A => rr_d(cpu),
+        0x1B => rr_e(cpu),
+        0x1C => rr_h(cpu),
+        0x1D => rr_l(cpu),
+        0x1F => rr_a(cpu),
+        0x30 => swap_b(cpu),
+        0x31 => swap_c(cpu),
+        0x32 => swap_d(cpu),
+        0x33 => swap_e(cpu),
+        0x34 => swap_h(cpu),
+        0x35 => swap_l(cpu),
+        0x37 => swap_a(cpu),
+        0x38 => srl_b(cpu),
+        0x39 => srl_c(cpu),
+        0x3A => srl_d(cpu),
+        0x3B => srl_e(cpu),
+        0x3C => srl_h(cpu),
+        0x3D => srl_l(cpu),
+        0x3F => srl_a(cpu),
+        0xC0 => set_b(cpu, 0),
+        0xC1 => set_c(cpu, 0),
+        0xC2 => set_d(cpu, 0),
+        0xC3 => set_e(cpu, 0),
+        0xC4 => set_h(cpu, 0),
+        0xC5 => set_l(cpu, 0),
+        0xC6 => set_x_hl(cpu, 0),
+        0xC7 => set_a(cpu, 0),
+        0xC8 => set_b(cpu, 1),
+        0xC9 => set_c(cpu, 1),
+        0xCA => set_d(cpu, 1),
+        0xCB => set_e(cpu, 1),
+        0xCC => set_h(cpu, 1),
+        0xCD => set_l(cpu, 1),
+        0xCE => set_x_hl(cpu, 1),
+        0xCF => set_a(cpu, 1),
+        0xD0 => set_b(cpu, 2),
+        0xD1 => set_c(cpu, 2),
+        0xD2 => set_d(cpu, 2),
+        0xD3 => set_e(cpu, 2),
+        0xD4 => set_h(cpu, 2),
+        0xD5 => set_l(cpu, 2),
+        0xD6 => set_x_hl(cpu, 2),
+        0xD7 => set_a(cpu, 2),
+        0xD8 => set_b(cpu, 3),
+        0xD9 => set_c(cpu, 3),
+        0xDA => set_d(cpu, 3),
+        0xDB => set_e(cpu, 3),
+        0xDC => set_h(cpu, 3),
+        0xDD => set_l(cpu, 3),
+        0xDE => set_x_hl(cpu, 3),
+        0xDF => set_a(cpu, 3),
+        0xE0 => set_b(cpu, 4),
+        0xE1 => set_c(cpu, 4),
+        0xE2 => set_d(cpu, 4),
+        0xE3 => set_e(cpu, 4),
+        0xE4 => set_h(cpu, 4),
+        0xE5 => set_l(cpu, 4),
+        0xE6 => set_x_hl(cpu, 4),
+        0xE7 => set_a(cpu, 4),
+        0xE8 => set_b(cpu, 5),
+        0xE9 => set_c(cpu, 5),
+        0xEA => set_d(cpu, 5),
+        0xEB => set_e(cpu, 5),
+        0xEC => set_h(cpu, 5),
+        0xED => set_l(cpu, 5),
+        0xEE => set_x_hl(cpu, 5),
+        0xEF => set_a(cpu, 5),
+        0xF0 => set_b(cpu, 6),
+        0xF1 => set_c(cpu, 6),
+        0xF2 => set_d(cpu, 6),
+        0xF3 => set_e(cpu, 6),
+        0xF4 => set_h(cpu, 6),
+        0xF5 => set_l(cpu, 6),
+        0xF6 => set_x_hl(cpu, 6),
+        0xF7 => set_a(cpu, 6),
+        0xF8 => set_b(cpu, 7),
+        0xF9 => set_c(cpu, 7),
+        0xFA => set_d(cpu, 7),
+        0xFB => set_e(cpu, 7),
+        0xFC => set_h(cpu, 7),
+        0xFD => set_l(cpu, 7),
+        0xFE => set_x_hl(cpu, 7),
+        0xFF => set_a(cpu, 7),
         _ => {
-            panic!("Unknown CB instruction: ${:04X} at ${:04X}", instr, origin);
+            panic!("Unknown CB instruction: ${:02X} at ${:04X}", (instr >> 8) & 0xFF, origin);
         }
     }
 }

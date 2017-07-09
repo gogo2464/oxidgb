@@ -30,8 +30,8 @@ pub struct GPU {
     pub obp0 : u8,
     pub obp1 : u8,
 
-    internal_clock : u32,
-    current_line : u8
+    pub internal_clock : u32,
+    pub current_line : u8
 }
 
 impl GPU {
@@ -174,7 +174,7 @@ impl GPU {
                     x -= 32 * 8
                 }
 
-                if pos < 0 || pos >= self.pixel_data.len() {
+                if pos >= self.pixel_data.len() {
                     continue
                 }
 
@@ -193,8 +193,7 @@ impl GPU {
             for col in 0..160 {
                 if y < 0 || y >= 144
                     || self.current_line >= wy + 144
-                    || wx < 0 || wx >= 160
-                    || wy < 0 || wy >= 144 {
+                    || wx >= 160 || wy >= 144 {
                     break
                 }
 
@@ -241,7 +240,7 @@ impl GPU {
                     continue
                 }
 
-                if pos < 0 || pos >= self.pixel_data.len() {
+                if pos >= self.pixel_data.len() {
                     continue
                 }
 
@@ -256,7 +255,7 @@ impl GPU {
         let sprite_size    = self.lcdc >> 2 & 0x1 == 1;
         let sprite_display = self.lcdc >> 1 & 0x1 == 1;
 
-        let sprite_height = if sprite_size {16} else {8};
+        let sprite_height : i16 = if sprite_size {16} else {8};
 
         // -- Sprites
         let mut sprite_row_count = 0;
@@ -265,12 +264,12 @@ impl GPU {
             for sprite_index in 0 .. 40 {
                 let info_ptr = sprite_index * 4;
 
-                let x_pos = (self.oam[info_ptr + 1] & 0xFF) - 8;
-                let y_pos = (self.oam[info_ptr] & 0xFF) - 16;
+                let x_pos = (self.oam[info_ptr + 1] as i16 & 0xFF) - 8;
+                let y_pos = (self.oam[info_ptr] as i16 & 0xFF) - 16;
 
-                let y_tile = self.current_line - y_pos;
+                let y_tile = self.current_line as i16 - y_pos;
 
-                if y_pos <= self.current_line - sprite_height || y_pos > self.current_line {
+                if y_pos <= self.current_line as i16 - sprite_height || y_pos > self.current_line as i16 {
                     continue
                 }
 
@@ -279,13 +278,13 @@ impl GPU {
                     break
                 }
 
-                let info = self.oam[info_ptr + 3] & 0xFF;
+                let info = self.oam[info_ptr + 3] as i16 & 0xFF;
                 let has_priority = info >> 7 & 0x1 == 0;
                 let y_flip = info >> 6 & 0x1 == 1;
                 let x_flip = info >> 5 & 0x1 == 1;
                 let palette = info >> 4 & 0x1 == 1;
 
-                let tile_pos = (self.oam[info_ptr + 2] &
+                let tile_pos = (self.oam[info_ptr + 2] as i16 &
                                     if sprite_size {0b11111110} else {0xFF}) * 16;
                 let tex_pos = (tile_pos +
                              if y_flip { sprite_height - 1 - y_tile } else { y_tile } * 2) as usize;
@@ -294,7 +293,7 @@ impl GPU {
                 let second_byte = self.vram[tex_pos + 1] & 0xFF;
 
                 for bit in 0 .. 8 {
-                    if y_pos + y_tile < 0 || y_pos + y_tile >= 144
+                    if y_pos + y_tile >= 144
                         || x_pos + if x_flip {7 - bit} else {bit} < 0
                         || x_pos + if x_flip {7 - bit} else {bit} >= 160 {
                         //logger.warn {"Bad pos (x=$x_pos, y=$y_pos, y_tile=$y_tile)"}

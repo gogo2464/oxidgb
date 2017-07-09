@@ -21,7 +21,7 @@ impl GBMemory {
         //println!("${:04X}: Read", ptr);
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
+                //println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
                 return 0xFF;
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
@@ -68,7 +68,7 @@ impl GBMemory {
 
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
+                //println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
                 self.high_ram[(ptr - 0xFF80) as usize] = val;

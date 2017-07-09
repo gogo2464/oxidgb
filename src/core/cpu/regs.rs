@@ -22,7 +22,7 @@ pub struct Registers {
 
 impl Registers {
     pub fn get_af(&self) -> u16 {
-        return ((self.a as u16) << 8) | (self.f as u16)
+        return ((self.a as u16) << 8) | (self.f as u16 & 0xF0)
     }
 
     pub fn get_bc(&self) -> u16 {
@@ -39,7 +39,7 @@ impl Registers {
 
     pub fn set_af(&mut self, val : u16) {
         self.a = ((val >> 8) & 0xFF) as u8;
-        self.f = ((val) & 0xFF) as u8;
+        self.f = ((val) & 0xF0) as u8;
     }
 
     pub fn set_bc(&mut self, val : u16) {
