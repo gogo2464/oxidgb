@@ -9,7 +9,7 @@ use core::cpu::CPU;
 /// Helper for RL operations.
 #[inline]
 fn rl_helper(cpu : &mut CPU, value : u8) -> u8 {
-    let old_flag = if cpu.regs.get_flag_c() {1 << 7} else {0};
+    let old_flag = if cpu.regs.get_flag_c() {1} else {0};
 
     let result = ((value << 1) & !1) | old_flag;
 
@@ -20,7 +20,7 @@ fn rl_helper(cpu : &mut CPU, value : u8) -> u8 {
     return result;
 }
 
-/// **0x10** - *RLA* - Rotate a left through Carry.
+/// **0x17** - *RLA* - Rotate a left through Carry.
 pub fn rla(cpu : &mut CPU) -> u8 {
     let current_value = cpu.regs.a;
     cpu.regs.a = rl_helper(cpu, current_value);

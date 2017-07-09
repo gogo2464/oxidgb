@@ -200,8 +200,8 @@ macro_rules! sbc {
 
             cpu.regs.set_flag_z(new_value == 0);
             cpu.regs.set_flag_n(true);
-            cpu.regs.set_flag_h(((y as i16 & 0x0F) - (x as i16 & 0x0F) - carry as i16) < 0);
-            cpu.regs.set_flag_c((y as i16 - x as i16 - carry as i16) < 0);
+            cpu.regs.set_flag_h(((x as i16 & 0x0F) - (y as i16 & 0x0F) - carry as i16) < 0);
+            cpu.regs.set_flag_c((x as i16 - y as i16 - carry as i16) < 0);
 
             return 4 /* Cycles */;
         }
