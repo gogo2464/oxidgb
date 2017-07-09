@@ -4,6 +4,8 @@
  * Contains types for interrupts.
 **/
 
+#[derive(Debug)]
+#[allow(dead_code)] // For debug messages
 pub enum InterruptType {
     VBLANK = 0,
     LCDC = 1,

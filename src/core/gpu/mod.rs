@@ -6,6 +6,8 @@
 
 pub const PITCH : usize = 4;
 
+#[derive(Debug)]
+#[allow(dead_code)] // For debug messages
 pub enum GPUMode {
     Vblank,
     Hblank,

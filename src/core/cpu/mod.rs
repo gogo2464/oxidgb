@@ -52,6 +52,16 @@ impl CPU {
         let cycles = execute_instruction(self, raw_instruction, current_instr);
 
         // After
+        // Handle interrupts
+        if self.interrupts_countdown > -1 {
+            self.interrupts_countdown -= 1;
+
+            if self.interrupts_countdown == -1 {
+                self.interrupts_enabled = true;
+            }
+        }
+
+        // Handle GPU
         let gpu_result = self.mem.gpu.step(cycles as u32);
 
         if gpu_result {
