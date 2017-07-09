@@ -6,6 +6,15 @@
 
 use core::cpu::CPU;
 
+/// **0xCB 0x40~0x7D** - *BIT (HL),b* - Test bit X in (hl)
+pub fn bit_phl(cpu : &mut CPU, digit : u8) -> u8 {
+    let cur_value = cpu.mem.read(cpu.regs.get_hl());
+    cpu.regs.set_flag_z((cur_value >> digit) & 0x1 == 0);
+    cpu.regs.set_flag_n(false);
+    cpu.regs.set_flag_h(true);
+    return 16 /* Cycles */;
+}
+
 /// *0xCB 0x40~0x7D** - *BIT X,b* - Test bit X in Y
 macro_rules! bit {
     ($name:ident, $reg:ident) => (

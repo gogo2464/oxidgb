@@ -29,6 +29,15 @@ pub fn rla(cpu : &mut CPU) -> u8 {
     return 4 /* Cycles */;
 }
 
+/// **0xCB 0x16** - *RL (hl)* - Rotate (hl) left through Carry.
+pub fn rl_phl(cpu : &mut CPU) -> u8 {
+    let current_value = cpu.mem.read(cpu.regs.get_hl());
+    let result = rl_helper(cpu, current_value);
+    cpu.mem.write(cpu.regs.get_hl(), result);
+
+    return 16 /* Cycles */;
+}
+
 macro_rules! rl {
     ($func:ident, $reg:ident) => (
         pub fn $func(cpu : &mut CPU) -> u8 {
@@ -70,6 +79,15 @@ pub fn rra(cpu : &mut CPU) -> u8 {
     return 4 /* Cycles */;
 }
 
+/// **0xCB 0x1E** - *RR (hl)* - Rotate (hl) right through Carry.
+pub fn rr_phl(cpu : &mut CPU) -> u8 {
+    let current_value = cpu.mem.read(cpu.regs.get_hl());
+    let result = rr_helper(cpu, current_value);
+    cpu.mem.write(cpu.regs.get_hl(), result);
+
+    return 16 /* Cycles */;
+}
+
 macro_rules! rr {
     ($func:ident, $reg:ident) => (
         pub fn $func(cpu : &mut CPU) -> u8 {
@@ -109,6 +127,15 @@ pub fn rlca(cpu : &mut CPU) -> u8 {
     return 4 /* Cycles */;
 }
 
+/// **0xCB 0x06** - *RLC (hl)* - Rotate a left. Bit 7 into Carry.
+pub fn rlc_phl(cpu : &mut CPU) -> u8 {
+    let current_value = cpu.mem.read(cpu.regs.get_hl());
+    let result = rlc_helper(cpu, current_value);
+    cpu.mem.write(cpu.regs.get_hl(), result);
+
+    return 16 /* Cycles */;
+}
+
 macro_rules! rlc {
     ($func:ident, $reg:ident) => (
         pub fn $func(cpu : &mut CPU) -> u8 {
@@ -146,6 +173,15 @@ pub fn rrca(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_z(false);
 
     return 4 /* Cycles */;
+}
+
+/// **0xCB 0x0E** - *RRC (hl)* - Rotate (hl) right. Bit 0 into Carry.
+pub fn rrc_phl(cpu : &mut CPU) -> u8 {
+    let current_value = cpu.mem.read(cpu.regs.get_hl());
+    let result = rrc_helper(cpu, current_value);
+    cpu.mem.write(cpu.regs.get_hl(), result);
+
+    return 16 /* Cycles */;
 }
 
 macro_rules! rrc {
