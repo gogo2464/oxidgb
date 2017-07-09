@@ -50,6 +50,9 @@ pub struct GameROM {
     backing_data : Vec<u8>,
     current_bank : u8,
 
+    cart_ram : Vec<u8>,
+    ram_size : usize,
+
     pub name : String,
     pub cart_type : CartridgeType
 }
@@ -84,8 +87,12 @@ impl GameROM {
     }
 
     pub fn read_ram(&self, ptr : u16) -> u8 {
-        println!("WARN: Cart RAM not implemented: {:04x}", ptr);
-        return 0xFF;
+        if self.ram_size == 0 {
+            println!("WARN: Reading from RAM on a ROM-only cartridge!");
+            return 0xFF;
+        }
+
+        return self.cart_ram[ptr as usize];
     }
 
     pub fn write(&mut self, ptr : u16, val : u8) {
@@ -124,7 +131,12 @@ impl GameROM {
     }
 
     pub fn write_ram(&mut self, ptr : u16, val : u8) {
-        println!("WARN: Cart RAM not implemented: {:04x} = {:02x}", ptr, val);
+        if self.ram_size == 0 {
+            println!("WARN: Writing to RAM on a ROM-only cartridge!");
+            return;
+        }
+
+        self.cart_ram[ptr as usize] = val;
     }
 
     /// Builds a new ROM from the specified file. Expects
@@ -152,12 +164,32 @@ impl GameROM {
 
         let name = String::from_utf8(data[0x134 .. 0x142].to_vec()).unwrap();
         let cart_type = unsafe { ::std::mem::transmute(data[0x0147]) };
+        let ram_size = get_ram_size(data[0x149]);
+
+        let ram = vec![0xFF; ram_size];
+
+        println!("Allocated {} bytes of cart RAM", ram.len());
 
         return GameROM {
             backing_data : data,
             name : name,
             cart_type : cart_type,
-            current_bank : 1
+            current_bank : 1,
+
+            cart_ram : ram,
+            ram_size : ram_size
         };
+    }
+}
+
+/// Returns a RAM size for a particular RAM id.
+fn get_ram_size(id : u8) -> usize {
+    return match id {
+        0 => 0,          // ROM only
+        1 => 2   * 1024, // 2  Kbyte
+        2 => 8   * 1024, // 8  Kbyte
+        3 => 32  * 1024, // 32 Kbyte
+        4 => 128 * 1024,  // 128 Kbyte,
+        _ => panic!("Unknown RAM size: {}", id)
     }
 }
