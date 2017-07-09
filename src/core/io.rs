@@ -9,12 +9,14 @@ use core::mem::GBMemory;
 /// Storage for various I/O registers.
 pub struct IORegisters {
     pub iflag : u8, // (if) 0x0F - Interrupt Flag (R/W)
+    pub dma : u8, // 0x46 - DMA Transfer and Start Address (W)
 }
 
 impl IORegisters {
     pub fn build() -> IORegisters {
         return IORegisters {
-            iflag : 0
+            iflag : 0,
+            dma : 0
         }
     }
 }
@@ -35,7 +37,7 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
         _ => {
-            println!("Unknown I/O register: {:04x}", ptr);
+            //println!("Unknown I/O register: {:04x}", ptr);
             0xFF
         }
     }
@@ -55,13 +57,28 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x40 => mem.gpu.lcdc = val,
         0x42 => mem.gpu.scy = val,
         0x43 => mem.gpu.scx = val,
+        0x46 => {
+            mem.ioregs.dma = val;
+            execute_dma(mem);
+        }
         0x47 => mem.gpu.bgp = val,
         0x48 => mem.gpu.obp0 = val,
         0x49 => mem.gpu.obp1 = val,
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
         _ => {
-            println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
+            //println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
+    }
+}
+
+/// Executes a DMA.
+fn execute_dma(mem : &mut GBMemory) {
+    // TODO: Locking
+    let address = (mem.ioregs.dma as u16) * 0x100;
+
+    for i in 0 .. 0xA0 {
+        let byte = mem.read(address + i);
+        mem.write(0xFE00 + i, byte);
     }
 }
