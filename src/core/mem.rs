@@ -7,12 +7,17 @@
 use core::rom::GameROM;
 use core::gpu::GPU;
 use core::io;
+use core::io::IORegisters;
 
 pub struct GBMemory {
     pub rom : GameROM,
     pub ram : [u8; 8192],
     pub high_ram : [u8; 127 /* - interrupt enable reg */],
-    pub gpu : GPU
+    pub gpu : GPU,
+
+    pub dirty_interrupts : bool, // If the CPU should handle interrupts
+    pub interrupt_reg : u8,
+    pub ioregs : IORegisters,
 }
 
 impl GBMemory {
@@ -21,21 +26,20 @@ impl GBMemory {
         //println!("${:04X}: Read", ptr);
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                //println!("WARN: Reading from interrupt enable reg: {:04x}", ptr);
-                return 0xFF;
+                return self.interrupt_reg;
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
                 return self.high_ram[(ptr - 0xFF80) as usize];
             }
             0xFF4C ... 0xFF7F => { // Unusable
-                //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
+                println!("WARN: Reading from unreadable memory: {:04x}", ptr);
                 return 0xFF;
             }
             0xFF00 ... 0xFF4B => { // I/O Registers
                 return io::read(self, (ptr & 0xFF) as u8);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
-                //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
+                println!("WARN: Reading from unreadable memory: {:04x}", ptr);
                 return 0xFF;
             }
             0xFE00 ... 0xFE9F => { // OAM
@@ -68,19 +72,19 @@ impl GBMemory {
 
         match ptr {
             0xFFFF => { // Interrupt enable reg
-                //println!("WARN: Writing to interrupt enable reg: {:04x} = {:02x}", ptr, val);
+                self.interrupt_reg = val;
             }
             0xFF80 ... 0xFFFE => { // High internal RAM
                 self.high_ram[(ptr - 0xFF80) as usize] = val;
             }
             0xFF4C ... 0xFF7F => { // Unusable
-                //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
+                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
             }
             0xFF00 ... 0xFF4B => { // I/O Registers
                 io::write(self, (ptr & 0xFF) as u8, val);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
-                //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
+                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
             }
             0xFE00 ... 0xFE9F => { // OAM
                 self.gpu.oam[(ptr - 0xFE00) as usize] = val;
@@ -123,7 +127,11 @@ impl GBMemory {
             rom : rom,
             ram : [0; 8192],
             high_ram : [0; 127],
-            gpu : GPU::build()
+            gpu : GPU::build(),
+
+            dirty_interrupts : false,
+            interrupt_reg : 0,
+            ioregs : IORegisters::build()
         }
     }
 }

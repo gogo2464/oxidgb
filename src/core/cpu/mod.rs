@@ -61,12 +61,30 @@ impl CPU {
             }
         }
 
+        if self.mem.dirty_interrupts {
+            if self.mem.ioregs.iflag != 0 {
+                for bit in 0 .. 8 {
+                    if (self.mem.ioregs.iflag >> bit) & 0x1 == 1 {
+                        let interrupt = InterruptType::get_by_bit(bit);
+                        match interrupt {
+                            Some(value) => {
+                                self.try_interrupt(value);
+                            },
+                            None => {
+                                println!("WARN: Unable to handle unknown interrupt");
+                            }
+                        }
+                        break
+                    }
+                }
+            }
+        }
+
         // Handle GPU
         let gpu_result = self.mem.gpu.step(cycles as u32);
 
         if gpu_result {
-            // TODO: Don't actually use this pattern
-            //self.throw_interrupt(InterruptType::VBLANK);
+            self.throw_interrupt(InterruptType::VBLANK);
         }
 
         return gpu_result;
@@ -77,27 +95,57 @@ impl CPU {
         while !self.tick() {}
     }
 
-    /// Immediately throws a interrupt.
-    pub fn throw_interrupt(&mut self, interrupt : InterruptType) {
-        if !self.interrupts_enabled {
+    /// Registers that a interrupt should be thrown.
+    pub fn throw_interrupt(&mut self, interrupt : InterruptType) -> bool {
+        // Check to see if we are in a STOP event
+        if self.stopped && !(interrupt == InterruptType::KEYPAD) {
+            return false;
+        }
+
+        // Set the IF flag
+        self.mem.ioregs.iflag = 1 >> (interrupt as u8);
+
+        return true;
+    }
+
+    /// Callback from memory to try to throw a memory interrupt.
+    pub fn try_interrupt(&mut self, interrupt : InterruptType) -> bool {
+        if !self.interrupts_enabled && !self.halted {
             //println!("Unable to throw interrupt when it is not active!");
-            return;
+            return false;
         }
 
-        self.interrupts_enabled = false;
-
-        // Push PC to stack
-        self.regs.sp -= 2;
-        self.mem.write_short(self.regs.sp, self.regs.pc);
-
-        // Jump to interrupt service
-        self.regs.pc = match interrupt {
-            InterruptType::VBLANK => 0x0040,
-            InterruptType::LCDC   => 0x0048,
-            InterruptType::TIMER  => 0x0050,
-            InterruptType::SERIAL => 0x0058,
-            InterruptType::KEYPAD => 0x0060
+        if self.interrupts_enabled {
+            self.mem.ioregs.iflag = 0
         }
+
+        if (self.mem.interrupt_reg >> interrupt as u8) & 0x1 == 0x1 {
+            self.halted = false;
+            self.stopped = false;
+
+            if !self.interrupts_enabled {
+                return true;
+            }
+
+            self.interrupts_enabled = false;
+
+            // Push PC to stack
+            self.regs.sp -= 2;
+            self.mem.write_short(self.regs.sp, self.regs.pc);
+
+            // Jump to interrupt service
+            self.regs.pc = match interrupt {
+                InterruptType::VBLANK => 0x0040,
+                InterruptType::LCDC => 0x0048,
+                InterruptType::TIMER => 0x0050,
+                InterruptType::SERIAL => 0x0058,
+                InterruptType::KEYPAD => 0x0060
+            };
+
+            return true;
+        }
+
+        return false;
     }
 
     /// Builds a CPU from the specified memory module.
