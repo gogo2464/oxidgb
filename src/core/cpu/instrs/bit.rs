@@ -6,6 +6,27 @@
 
 use core::cpu::CPU;
 
+/// *0xCB 0x40~0x7D** - *BIT X,b* - Test bit X in Y
+macro_rules! bit {
+    ($name:ident, $reg:ident) => (
+        pub fn $name(cpu : &mut CPU, digit : u8) -> u8 {
+            let cur_value = cpu.regs.$reg;
+            cpu.regs.set_flag_z((cur_value >> digit) & 0x1 == 0);
+            cpu.regs.set_flag_n(false);
+            cpu.regs.set_flag_h(true);
+            return 8 /* Cycles */;
+        }
+    )
+}
+
+bit!(bit_b, b);
+bit!(bit_c, c);
+bit!(bit_d, d);
+bit!(bit_e, e);
+bit!(bit_h, h);
+bit!(bit_l, l);
+bit!(bit_a, a);
+
 /// **0xCB 0xC0 ~ 0xCB 0xFF** - *SET X,Y* - Set bit X in register Y
 macro_rules! set {
     ($name:ident, $reg:ident) => (
