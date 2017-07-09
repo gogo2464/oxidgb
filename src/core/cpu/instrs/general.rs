@@ -87,6 +87,35 @@ pub fn adc_a_n(cpu : &mut CPU) -> u8 {
     return 8 /* Cycles */;
 }
 
+/// **0xE8** - *ADD sp,#S* - Add signed value # to sp.
+pub fn add_sp_ns(cpu : &mut CPU) -> u8 {
+    let prev_value = cpu.regs.sp;
+    let value = get_n(cpu) as i8;
+    let result = (prev_value as i16)
+                    .wrapping_add(value as i16) as u16;
+
+    let unwrapped_value = (prev_value as i16)
+                            .wrapping_add(value as i16);
+
+    cpu.regs.sp = result;
+
+    cpu.regs.set_flag_z(false);
+    cpu.regs.set_flag_n(false);
+
+    // Credit to Gearboy for this one:
+    // https://github.com/drhelius/Gearboy
+    cpu.regs.set_flag_h((((prev_value as i16)
+        ^ unwrapped_value
+        ^ (value as i16))
+        & 0x10) == 0x10);
+    cpu.regs.set_flag_c((((prev_value as i16)
+        ^ unwrapped_value
+        ^ (value as i16))
+        & 0x100) == 0x100);
+
+    return 16 /* Cycles */;
+}
+
 // Subtraction
 
 /// **0x90 ~ 0x95** - *SUB A,X* - Subtract X from A.

@@ -243,6 +243,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xE5 => push_hl(cpu),
         0xE6 => and_n(cpu),
         0xE7 => rst(cpu, 0x20),
+        0xE8 => add_sp_ns(cpu),
         0xE9 => jmp_hl(cpu),
         0xEA => ld_pnn_a(cpu),
         0xEB => bad_instruction(instr),

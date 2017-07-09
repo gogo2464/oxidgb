@@ -6,6 +6,8 @@
 
 use core::cpu::CPU;
 
+use core::cpu::instrs::utils::*;
+
 /// **0x01** - *LD bc,nnnn* - Put nnnn in bc
 pub fn ld_bc_nnnn(cpu : &mut CPU) -> u8 {
     let value = cpu.mem.read_short(cpu.regs.pc);
@@ -167,18 +169,27 @@ pub fn push_af(cpu : &mut CPU) -> u8 {
 /// **0xF8** - *LDHL SP,n* - Put sp + n effective address into hl
 pub fn ldhl_sp_n(cpu : &mut CPU) -> u8 {
     let prev_value = cpu.regs.sp;
-    let cur_value = cpu.mem.read(cpu.regs.pc & 0xFFFF) as u16;
-    cpu.regs.pc += 1;
+    let cur_value = get_n(cpu) as i8;
 
-    let result = prev_value + cur_value;
+    let result = (prev_value as i16).wrapping_add(cur_value as i16) as u16;
+    let unwrapped_value = prev_value as i32
+        + cur_value as i32;
 
     cpu.regs.set_hl(result);
 
     cpu.regs.set_flag_z(false);
     cpu.regs.set_flag_n(false);
 
-    cpu.regs.set_flag_h((prev_value ^ cur_value ^ (result & 0xFFFF) & 0x10) == 0x10);
-    cpu.regs.set_flag_c((prev_value ^ cur_value ^ (result & 0xFFFF) & 0x100) == 0x100);
+    // Credit to Gearboy for this one:
+    // https://github.com/drhelius/Gearboy
+    cpu.regs.set_flag_h((((prev_value as i16)
+        ^ (unwrapped_value as i16)
+        ^ (cur_value as i16))
+        & 0x10) == 0x10);
+    cpu.regs.set_flag_c((((prev_value as i16)
+        ^ (unwrapped_value as i16)
+        ^ (cur_value as i16))
+        & 0x100) == 0x100);
 
     return 12 /* Cycles */;
 }
