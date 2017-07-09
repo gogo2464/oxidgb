@@ -299,6 +299,13 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
 #[inline]
 fn cb(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
     return match (instr >> 8) & 0xFF {
+        0x10 => rl_b(cpu),
+        0x11 => rl_c(cpu),
+        0x12 => rl_d(cpu),
+        0x13 => rl_e(cpu),
+        0x14 => rl_h(cpu),
+        0x15 => rl_l(cpu),
+        0x17 => rl_a(cpu),
         0x18 => rr_b(cpu),
         0x19 => rr_c(cpu),
         0x1A => rr_d(cpu),
