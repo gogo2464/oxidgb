@@ -40,8 +40,8 @@ fn main() {
     // Build CPU
     let mut cpu = CPU::build(memory);
 
-    println!("Opening ROM: {}", cpu.mem.rom.get_name());
-    println!("Mapper type: {:?}", cpu.mem.rom.get_cart_type());
+    println!("Opening ROM: {}", cpu.mem.rom.name);
+    println!("Mapper type: {:?}", cpu.mem.rom.cart_type);
 
     // Build a window
     let sdl_context = sdl2::init().unwrap();

@@ -13,7 +13,7 @@ use std::string::String;
 
 /// The different kinds of cartridges that can be handled. Each has a
 ///  specific way of managing memory/providing additional capabilities.
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 #[allow(dead_code)] // For debug messages
 pub enum CartridgeType {
     RomOnly           = 0x00,
@@ -47,23 +47,40 @@ pub enum CartridgeType {
 /// Holds a game's ROM, and exposes interfaces to read information from
 ///  it intelligently.
 pub struct GameROM {
-    backing_data : Vec<u8>
+    backing_data : Vec<u8>,
+    current_bank : u8,
+
+    pub name : String,
+    pub cart_type : CartridgeType
 }
 
 impl GameROM {
-    /// Gets the ROM name from the ROM header.
-    pub fn get_name(&self) -> String {
-        return String::from_utf8(self.backing_data[0x134 .. 0x142].to_vec()).unwrap();
-    }
-
-    /// Returns the cartridge type of the ROM.
-    /// May return undefined enum entry if ROM type is not supported.
-    pub fn get_cart_type(&self) -> CartridgeType {
-        return unsafe { ::std::mem::transmute(self.backing_data[0x0147]) };
-    }
-
     pub fn read(&self, ptr : u16) -> u8 {
-        return self.backing_data[ptr as usize];
+        return match self.cart_type {
+            CartridgeType::RomOnly => {
+                self.backing_data[ptr as usize]
+            }
+            CartridgeType::RomMbc1 |
+                CartridgeType::RomMbc1Ram |
+                CartridgeType::RomMbc1RamBatt |
+                CartridgeType::RomMbc3RamBatt  => {
+                if ptr < 0x4000 {
+                    self.backing_data[ptr as usize]
+                } else {
+                    let target = ptr as usize + (self.current_bank as usize - 1)
+                                            * 0x4000;
+                    if target >= self.backing_data.len() {
+                        println!("Out of range read for MBC1!");
+                        0xFF
+                    } else {
+                        self.backing_data[target]
+                    }
+                }
+            }
+            _ => {
+                panic!("Unimplemented cart type: {:?}", self.cart_type);
+            }
+        };
     }
 
     pub fn read_ram(&self, ptr : u16) -> u8 {
@@ -71,11 +88,42 @@ impl GameROM {
         return 0xFF;
     }
 
-    pub fn write(&self, ptr : u16, val : u8) {
-        println!("WARN: Writing to ROM: {:04x} = {:02x}", ptr, val);
+    pub fn write(&mut self, ptr : u16, val : u8) {
+        match self.cart_type {
+            CartridgeType::RomOnly => {
+                println!("WARN: Writing to ROM: {:04x} = {:02x}", ptr, val);
+            }
+            CartridgeType::RomMbc1 |
+            CartridgeType::RomMbc1Ram |
+            CartridgeType::RomMbc1RamBatt |
+            CartridgeType::RomMbc3RamBatt => {
+                match ptr {
+                    0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
+                        println!("STUB: ROM bank activation: {}", val > 0);
+                    }
+                    0x2000 ... 0x3FFF => { // Bank switching
+                        self.current_bank = val & 0b11111;
+                        if self.current_bank < 1 {
+                            self.current_bank = 1;
+                        }
+                    }
+                    0x6000 ... 0x7FFF => { // Memory models
+                        println!("WARN: MBC1 memory models are not supported!");
+                    }
+                    _ => {
+                        println!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
+                                 ptr, val);
+                    }
+
+                }
+            }
+            _ => {
+                panic!("Unimplemented cart type: {:?}", self.cart_type);
+            }
+        }
     }
 
-    pub fn write_ram(&self, ptr : u16, val : u8) {
+    pub fn write_ram(&mut self, ptr : u16, val : u8) {
         println!("WARN: Cart RAM not implemented: {:04x} = {:02x}", ptr, val);
     }
 
@@ -98,12 +146,18 @@ impl GameROM {
             Ok(file) => file,
         };
 
-        file.read_to_end(&mut data).unwrap();
+        let read = file.read_to_end(&mut data).unwrap();
 
-        //println!("Read: {}, expected: {}", read, file_size);
+        println!("Read: {}, expected: {}", read, file_size);
+
+        let name = String::from_utf8(data[0x134 .. 0x142].to_vec()).unwrap();
+        let cart_type = unsafe { ::std::mem::transmute(data[0x0147]) };
 
         return GameROM {
-            backing_data : data
+            backing_data : data,
+            name : name,
+            cart_type : cart_type,
+            current_bank : 1
         };
     }
 }
