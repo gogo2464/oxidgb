@@ -8,6 +8,61 @@ use core::cpu::CPU;
 
 use core::cpu::instrs::utils::*;
 
+/// **0x80 ~ 0xE8** - *ADD X* - Add X to a.
+macro_rules! add {
+    ($name:ident, $reg:ident) => (
+        pub fn $name(cpu : &mut CPU) -> u8 {
+            let x = cpu.regs.a;
+            let y = cpu.regs.$reg;
+            let new_value = x.wrapping_add(y);
+            cpu.regs.a = new_value;
+
+            cpu.regs.set_flag_z(new_value == 0);
+            cpu.regs.set_flag_n(false);
+            cpu.regs.set_flag_h(((y & 0x0F) + (x & 0x0F)) > 0xF);
+            cpu.regs.set_flag_c((y as u16 + x as u16) > 0xFF);
+
+            return 4 /* Cycles */;
+        }
+    )
+}
+
+add!(add_b, b);
+add!(add_c, c);
+add!(add_d, d);
+add!(add_e, e);
+add!(add_h, h);
+add!(add_l, l);
+add!(add_a, a);
+
+/// **0x80 ~ 0xE8** - *ADC X* - Add X to a with carry.
+macro_rules! adc {
+    ($name:ident, $reg:ident) => (
+        pub fn $name(cpu : &mut CPU) -> u8 {
+            let x = cpu.regs.a;
+            let y = cpu.regs.$reg;
+            let carry = if cpu.regs.get_flag_c() {1} else {0};
+            let new_value = x.wrapping_add(y).wrapping_add(carry);
+            cpu.regs.a = new_value;
+
+            cpu.regs.set_flag_z(new_value == 0);
+            cpu.regs.set_flag_n(false);
+            cpu.regs.set_flag_h(((y & 0x0F) + (x & 0x0F) + carry) > 0xF);
+            cpu.regs.set_flag_c((y as u16 + x as u16 + carry as u16) > 0xFF);
+
+            return 4 /* Cycles */;
+        }
+    )
+}
+
+adc!(adc_b, b);
+adc!(adc_c, c);
+adc!(adc_d, d);
+adc!(adc_e, e);
+adc!(adc_h, h);
+adc!(adc_l, l);
+adc!(adc_a, a);
+
 /**
  * **0xC6** - *ADD a,#* - Add # to a.
  */
@@ -132,6 +187,34 @@ pub fn sub(x : u8, cpu : &mut CPU) -> u8 {
 
     return 4 /* Cycles */;
 }
+
+/// **0x80 ~ 0xE8** - *SBC X* - Subtract X from a with carry.
+macro_rules! sbc {
+    ($name:ident, $reg:ident) => (
+        pub fn $name(cpu : &mut CPU) -> u8 {
+            let x = cpu.regs.a;
+            let y = cpu.regs.$reg;
+            let carry = if cpu.regs.get_flag_c() {1} else {0};
+            let new_value = x.wrapping_sub(y).wrapping_sub(carry);
+            cpu.regs.a = new_value;
+
+            cpu.regs.set_flag_z(new_value == 0);
+            cpu.regs.set_flag_n(true);
+            cpu.regs.set_flag_h(((y as i16 & 0x0F) - (x as i16 & 0x0F) - carry as i16) < 0);
+            cpu.regs.set_flag_c((y as i16 - x as i16 - carry as i16) < 0);
+
+            return 4 /* Cycles */;
+        }
+    )
+}
+
+sbc!(sbc_b, b);
+sbc!(sbc_c, c);
+sbc!(sbc_d, d);
+sbc!(sbc_e, e);
+sbc!(sbc_h, h);
+sbc!(sbc_l, l);
+sbc!(sbc_a, a);
 
 /// **0xDE** - *SBC n* -  Subtract n + Carry from a.
 pub fn sbc_n(cpu : &mut CPU) -> u8 {
