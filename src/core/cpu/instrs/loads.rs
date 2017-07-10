@@ -56,7 +56,7 @@ pub fn ld_e_n(cpu : &mut CPU) -> u8 {
 /// **0x22** - *LDI (hl),a* - Put a into \*hl. Increment hl.
 pub fn ldi_phl_a(cpu : &mut CPU) -> u8 {
     cpu.mem.write(cpu.regs.get_hl(), cpu.regs.a);
-    let new_value = cpu.regs.get_hl() + 1;
+    let new_value = cpu.regs.get_hl().wrapping_add(1);
     cpu.regs.set_hl(new_value);
 
     return 8 /* Cycles */;

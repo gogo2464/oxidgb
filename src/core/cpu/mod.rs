@@ -122,11 +122,18 @@ impl CPU {
         // Handle GPU
         let gpu_result = self.mem.gpu.step(cycles as u32);
 
-        if gpu_result {
-            self.throw_interrupt(InterruptType::VBLANK);
+        match gpu_result {
+            Some(value) => {
+                println!("GPU throwing interrupt: {:?}", value);
+                self.throw_interrupt(value);
+                if value == InterruptType::VBLANK {
+                    return true
+                }
+            }
+            None => {}
         }
 
-        return gpu_result;
+        return false;
     }
 
     /// Runs a iteration of the CPU
@@ -142,7 +149,8 @@ impl CPU {
         }
 
         // Set the IF flag
-        self.mem.ioregs.iflag = 1 << (interrupt as u8);
+        self.mem.ioregs.iflag |= 1 << (interrupt as u8);
+        self.mem.dirty_interrupts = true;
 
         return true;
     }
@@ -168,6 +176,8 @@ impl CPU {
             }
 
             self.interrupts_enabled = false;
+
+            println!("Throwing interrupt: {:?}", interrupt);
 
             // Push PC to stack
             self.regs.sp -= 2;

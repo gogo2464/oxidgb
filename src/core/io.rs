@@ -14,8 +14,6 @@ pub struct IORegisters {
     pub tma : u8,   // 0x06 - Timer Modulo (R/W)
     pub tac : u8,   // 0x07 - Timer Control (R/W)
     pub iflag : u8, // 0x0F - (if) Interrupt Flag (R/W)
-    pub stat : u8,  // 0x41 - LCDC Status (R/W)
-    pub lyc : u8,   // 0x45 - LY Compare (R/W)
     pub dma : u8,   // 0x46 - DMA Transfer and Start Address (W)
 }
 
@@ -29,8 +27,6 @@ impl IORegisters {
             tma : 0,
             tac : 0,
             iflag : 0,
-            stat : 0,
-            lyc : 0,
             dma : 0
         }
     }
@@ -67,12 +63,12 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x0F => mem.ioregs.iflag,
         0x40 => mem.gpu.lcdc,
         0x41 => {
-            let stat = mem.ioregs.stat & 0b1111000;
+            let stat = mem.gpu.stat & 0b1111000;
             let mode = (mem.gpu.mode as u8) & 0b11;
             let mut result = stat | mode;
 
             // Handle coin
-            if mem.ioregs.lyc == mem.gpu.current_line {
+            if mem.gpu.lyc == mem.gpu.current_line {
                 result |= 1 << 2;
             }
 
@@ -87,7 +83,7 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
         _ => {
-            println!("Unknown I/O register: {:04x}", ptr);
+            //println!("Unknown I/O register: {:04x}", ptr);
             0xFF
         }
     }
@@ -110,9 +106,10 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
             mem.dirty_interrupts = true;
         },
         0x40 => mem.gpu.lcdc = val,
+        0x41 => mem.gpu.stat = val,
         0x42 => mem.gpu.scy = val,
         0x43 => mem.gpu.scx = val,
-        0x45 => mem.ioregs.lyc = val,
+        0x45 => mem.gpu.lyc = val,
         0x46 => {
             mem.ioregs.dma = val;
             execute_dma(mem);
@@ -123,7 +120,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
         _ => {
-            println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
+            //println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
     }
 }

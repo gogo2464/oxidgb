@@ -4,9 +4,11 @@
  * Renders graphics into a framebuffer
 **/
 
+use core::cpu::interrupts::InterruptType;
+
 pub const PITCH : usize = 3;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[allow(dead_code)] // For debug messages
 pub enum GPUMode {
     Vblank = 0,
@@ -24,6 +26,8 @@ pub struct GPU {
     pub oam : [u8; 160],
 
     pub lcdc : u8,
+    pub stat : u8,
+    pub lyc : u8,
     pub scx : u8,
     pub scy : u8,
     pub wx : u8,
@@ -38,13 +42,14 @@ pub struct GPU {
 
 impl GPU {
     /// Steps the GPU. Returns true if a Vblank interrupt should be thrown.
-    pub fn step(&mut self, cycles : u32) -> bool {
+    pub fn step(&mut self, cycles : u32) -> Option<InterruptType> {
         self.internal_clock += cycles;
 
         match self.mode {
             GPUMode::Vblank => {
                 if self.internal_clock >= 456 {
                     if self.current_line > 153 {
+                        // TODO: Check to see if this new timing is right
                         if self.internal_clock >= 4560 {
                             // TODO: Fix up vblank timing here
                             self.internal_clock -= 4560;
@@ -64,7 +69,7 @@ impl GPU {
                         self.current_line += 1;
 
                         if self.current_line == 154 {
-                            return true;
+                            return Some(InterruptType::VBLANK);
                         }
                     }
                 }
@@ -75,12 +80,11 @@ impl GPU {
 
                     self.current_line += 1;
 
-                        if self.current_line > 143 {
-                            self.mode = GPUMode::Vblank;
-                            //return true;
-                        } else {
-                            self.mode = GPUMode::OamScanline;
-                        }
+                    if self.current_line > 143 {
+                        self.mode = GPUMode::Vblank;
+                    } else {
+                        self.mode = GPUMode::OamScanline;
+                    }
                 }
             }
             GPUMode::OamScanline => {
@@ -100,12 +104,40 @@ impl GPU {
             }
         }
 
-        return false;
+        return self.check_interrupt();
     }
 
     /// Returns if the screen is currently enabled.
     pub fn is_enabled(&self) -> bool {
         self.lcdc >> 7 & 0x1 == 1
+    }
+
+    /// Checks to see if any interrupts should be thrown.
+    fn check_interrupt(&mut self) -> Option<InterruptType> {
+        let stat = self.stat;
+
+        // Check LYC
+        if self.mode == GPUMode::OamScanline && (stat >> 6) & 0x1 == 1
+            && self.lyc == self.current_line {
+            return Some(InterruptType::LCDC);
+        }
+
+        // Check OAM STAT interrupt
+        if self.mode == GPUMode::OamScanline && (stat >> 5) & 0x1 == 1 {
+            return Some(InterruptType::LCDC);
+        }
+
+        // Check Vblank STAT interrupt
+        if self.mode == GPUMode::Vblank && (stat >> 4) & 0x1 == 1 {
+            return Some(InterruptType::LCDC);
+        }
+
+        // Check Hblank STAT interrupt
+        if self.mode == GPUMode::Hblank && (stat >> 3) & 0x1 == 1 {
+            return Some(InterruptType::LCDC);
+        }
+
+        return None;
     }
 
     /// Draws a pixel to the backing framebuffer, based upon the overall
@@ -356,8 +388,10 @@ impl GPU {
             oam : [0; 160],
 
             lcdc: 0x91,
+            stat: 0,
             scx: 0,
             scy: 0,
+            lyc : 0,
             wx: 0,
             wy: 0,
             bgp: 0xFC,

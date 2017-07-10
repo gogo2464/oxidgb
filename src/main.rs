@@ -22,7 +22,7 @@ use core::cpu::CPU;
 use core::gpu::PITCH;
 
 fn main() {
-    println!("Oxidgb v0.1");
+    //println!("Oxidgb v0.1");
 
     // TODO: Commandline arguments parser
     let result = match nfd::open_file_dialog(None, None).unwrap() {
@@ -42,8 +42,8 @@ fn main() {
     // Build CPU
     let mut cpu = CPU::build(memory);
 
-    println!("Opening ROM: {}", cpu.mem.rom.name);
-    println!("Mapper type: {:?}", cpu.mem.rom.cart_type);
+    //println!("Opening ROM: {}", cpu.mem.rom.name);
+    //println!("Mapper type: {:?}", cpu.mem.rom.cart_type);
 
     // Build a window
     let sdl_context = sdl2::init().unwrap();

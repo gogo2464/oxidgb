@@ -10,6 +10,7 @@ use core::input::build_input;
 
 use core::rom::GameROM;
 use core::gpu::GPU;
+use core::gpu::GPUMode;
 use core::io;
 use core::io::IORegisters;
 
@@ -41,11 +42,19 @@ impl GBMemory {
                 return io::read(self, (ptr & 0xFF) as u8);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
-                println!("WARN: Reading from unreadable memory: {:04x}", ptr);
+                //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
                 return 0x00;
             }
             0xFE00 ... 0xFE9F => { // OAM
-                return self.gpu.oam[(ptr - 0xFE00) as usize];
+                // Check if read is valid
+                return match self.gpu.mode {
+                    GPUMode::Vblank |
+                    GPUMode::Hblank => self.gpu.oam[(ptr - 0xFE00) as usize],
+                    _ => {
+                        println!("Inaccessible OAM: {:04x}", ptr);
+                        0xFF
+                    }
+                };
             }
             0xE000 ... 0xFDFF => { // RAM Echo
                 return self.ram[(ptr - 0xE000) as usize];
@@ -57,7 +66,16 @@ impl GBMemory {
                 return self.rom.read_ram(ptr - 0xA000);
             }
             0x8000 ... 0x9FFF => { // GPU
-                return self.gpu.vram[(ptr - 0x8000) as usize];
+                // Check if read is valid
+                return match self.gpu.mode {
+                    GPUMode::Vblank |
+                    GPUMode::Hblank |
+                    GPUMode::OamScanline => self.gpu.vram[(ptr - 0x8000) as usize],
+                    _ => {
+                        println!("Inaccessible VRAM: {:04x}", ptr);
+                        0xFF
+                    }
+                };
             }
             0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
                 return self.rom.read(ptr);
@@ -79,17 +97,21 @@ impl GBMemory {
             0xFF80 ... 0xFFFE => { // High internal RAM
                 self.high_ram[(ptr - 0xFF80) as usize] = val;
             }
-            0xFF4C ... 0xFF7F => { // Unusable
-                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
-            }
-            0xFF00 ... 0xFF4B => { // I/O Registers
+            0xFF00 ... 0xFF7F => { // I/O Registers
                 io::write(self, (ptr & 0xFF) as u8, val);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
-                println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
+                //println!("WARN: Writing to unreadable memory: {:04x} = {:02x}", ptr, val);
             }
             0xFE00 ... 0xFE9F => { // OAM
-                self.gpu.oam[(ptr - 0xFE00) as usize] = val;
+                // Check if write is valid
+                match self.gpu.mode {
+                    GPUMode::Vblank |
+                    GPUMode::Hblank => self.gpu.oam[(ptr - 0xFE00) as usize] = val,
+                    _ => {
+                        println!("Inaccessible OAM: {:04x} = {:02x}", ptr, val);
+                    }
+                };
             }
             0xE000 ... 0xFDFF => { // RAM Echo
                 self.ram[(ptr - 0xE000) as usize] = val;
@@ -101,7 +123,15 @@ impl GBMemory {
                 self.rom.write_ram(ptr - 0xA000, val);
             }
             0x8000 ... 0x9FFF => { // GPU
-                self.gpu.vram[(ptr - 0x8000) as usize] = val;
+                // Check if write is valid
+                match self.gpu.mode {
+                    GPUMode::Vblank |
+                    GPUMode::Hblank |
+                    GPUMode::OamScanline => self.gpu.vram[(ptr - 0x8000) as usize] = val,
+                    _ => {
+                        println!("Inaccessible VRAM: {:04x} = {:02x}", ptr, val);
+                    }
+                };
             }
             0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
                 self.rom.write(ptr, val);
