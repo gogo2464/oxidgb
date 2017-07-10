@@ -44,19 +44,28 @@ impl GPU {
         match self.mode {
             GPUMode::Vblank => {
                 if self.internal_clock >= 456 {
-                    self.internal_clock -= 456;
-
-                    self.current_line += 1;
-
                     if self.current_line > 153 {
-                        // VBlank is done, empty our framebuffer
-                        for i in 0 .. 160 * 144 * PITCH {
-                            // TODO: Fill with palette blanks
-                            self.pixel_data[i] = 0xFF;
-                        }
+                        if self.internal_clock >= 4560 {
+                            // TODO: Fix up vblank timing here
+                            self.internal_clock -= 4560;
 
-                        self.current_line = 0;
-                        self.mode = GPUMode::OamScanline;
+                            // VBlank is done, empty our framebuffer
+                            for i in 0 .. 160 * 144 * PITCH {
+                                // TODO: Fill with palette blanks
+                                self.pixel_data[i] = 0xFF;
+                            }
+
+                            self.current_line = 0;
+                            self.mode = GPUMode::OamScanline;
+                        }
+                    } else {
+                        self.internal_clock -= 456;
+
+                        self.current_line += 1;
+
+                        if self.current_line == 154 {
+                            return true;
+                        }
                     }
                 }
             }
@@ -68,8 +77,7 @@ impl GPU {
 
                         if self.current_line > 143 {
                             self.mode = GPUMode::Vblank;
-
-                            return true;
+                            //return true;
                         } else {
                             self.mode = GPUMode::OamScanline;
                         }
@@ -230,7 +238,7 @@ impl GPU {
                 let first_byte = self.vram[tex_pos];
                 let second_byte = self.vram[tex_pos + 1];
 
-                let bit = x % 8;
+                let bit = x as u16 % 8;
 
                 // Combine our bits from first and second byte
                 let first_bit = (first_byte >> (7 - bit)) & 0x1;
@@ -293,7 +301,7 @@ impl GPU {
                 let palette = info >> 4 & 0x1 == 1;
 
                 let tile_pos = (self.oam[info_ptr + 2] as i8 as i16 &
-                                    if sprite_size {0b11111110} else {0xFF}) * 16;
+                                    if sprite_size {(!(1 as u8)) as i16} else {0xFF}) * 16;
                 let tex_pos = (tile_pos +
                              if y_flip { sprite_height - 1 - y_tile } else { y_tile } * 2) as usize;
 

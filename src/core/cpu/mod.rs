@@ -21,7 +21,10 @@ pub struct CPU {
     pub interrupts_enabled : bool,
     pub interrupts_countdown : i8,
     pub stopped : bool,
-    pub halted : bool
+    pub halted : bool,
+
+    /// If the timer was high
+    pub timer_armed : bool
 }
 
 impl CPU {
@@ -76,12 +79,43 @@ impl CPU {
         };
 
         // After
-        // Handle interrupts
+        // Handle interrupt toggle
         if self.interrupts_countdown > -1 {
             self.interrupts_countdown -= 1;
 
             if self.interrupts_countdown == -1 {
                 self.interrupts_enabled = true;
+            }
+        }
+
+        // Handle timers
+        let cur_value = self.mem.ioregs.div;
+        self.mem.ioregs.div = cur_value.wrapping_add(cycles as u16);
+
+        // TAC timer
+        let tac = self.mem.ioregs.tac;
+        let freq = tac & 0b11;
+        let bit = match freq {
+            0 => 9,
+            1 => 3,
+            2 => 5,
+            3 => 7,
+            _ => panic!("Programmer error: Unknown frequency: {}", freq)
+        };
+
+        let tac_state = ((self.mem.ioregs.div >> bit) & 0x1 & ((tac >> 2) & 0x1) as u16) == 1;
+        if tac_state {
+            self.timer_armed = true;
+        } else if self.timer_armed {
+            self.timer_armed = false;
+
+            if self.mem.ioregs.tima == 0xFF {
+                // Timer interrupt firing!
+                self.mem.ioregs.tima = self.mem.ioregs.tma;
+                println!("Timer interrupt: {}", self.mem.ioregs.tma);
+                self.throw_interrupt(InterruptType::TIMER);
+            } else {
+                self.mem.ioregs.tima += 1;
             }
         }
 
@@ -108,7 +142,7 @@ impl CPU {
         }
 
         // Set the IF flag
-        self.mem.ioregs.iflag = 1 >> (interrupt as u8);
+        self.mem.ioregs.iflag = 1 << (interrupt as u8);
 
         return true;
     }
@@ -162,7 +196,8 @@ impl CPU {
             interrupts_enabled : true,
             interrupts_countdown : -1,
             stopped : false,
-            halted : false
+            halted : false,
+            timer_armed : false
         }
     }
 

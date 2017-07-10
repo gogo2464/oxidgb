@@ -9,6 +9,10 @@ use core::mem::GBMemory;
 /// Storage for various I/O registers.
 pub struct IORegisters {
     pub p1 : u8,    // 0x00 - Joypad info and controller (R/W)
+    pub div : u16,  // 0x04 - Divider register (R/W)
+    pub tima : u8,  // 0x05 - Timer Counter (R/W)
+    pub tma : u8,   // 0x06 - Timer Modulo (R/W)
+    pub tac : u8,   // 0x07 - Timer Control (R/W)
     pub iflag : u8, // 0x0F - (if) Interrupt Flag (R/W)
     pub stat : u8,  // 0x41 - LCDC Status (R/W)
     pub lyc : u8,   // 0x45 - LY Compare (R/W)
@@ -17,8 +21,13 @@ pub struct IORegisters {
 
 impl IORegisters {
     pub fn build() -> IORegisters {
+        // TODO: Validate these
         return IORegisters {
             p1 : 0,
+            div : 0xABCC,
+            tima : 0,
+            tma : 0,
+            tac : 0,
             iflag : 0,
             stat : 0,
             lyc : 0,
@@ -51,6 +60,10 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
 
             output
         }
+        0x04 => ((mem.ioregs.div >> 8) & 0xFF) as u8,
+        0x05 => mem.ioregs.tima,
+        0x06 => mem.ioregs.tma,
+        0x07 => mem.ioregs.tac,
         0x0F => mem.ioregs.iflag,
         0x40 => mem.gpu.lcdc,
         0x41 => {
@@ -87,7 +100,11 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x01 => {
             // Serial
             //print!("{}", char::from_u32(val as u32).unwrap());
-        }
+        },
+        0x04 => mem.ioregs.div = 0,
+        0x05 => mem.ioregs.tima = val,
+        0x06 => mem.ioregs.tma = val,
+        0x07 => mem.ioregs.tac = val & 0b111,
         0x0F => {
             mem.ioregs.iflag = val;
             mem.dirty_interrupts = true;
@@ -106,7 +123,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
         _ => {
-            //println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
+            println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
     }
 }
