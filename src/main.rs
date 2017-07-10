@@ -1,7 +1,11 @@
+extern crate clap;
 extern crate sdl2;
 extern crate nfd;
 
 mod core;
+
+use clap::App;
+use clap::Arg;
 
 use sdl2::event::Event;
 use sdl2::pixels;
@@ -14,6 +18,7 @@ use nfd::Response;
 use std::{thread, time};
 use std::time::Duration;
 use std::path::Path;
+use std::process::exit;
 
 use core::input::GameboyButton;
 use core::rom::GameROM;
@@ -22,19 +27,46 @@ use core::cpu::CPU;
 use core::gpu::PITCH;
 
 fn main() {
-    //println!("Oxidgb v0.1");
+    let app = App::new("Oxidgb")
+        .about("A experimental Gameboy emulator")
+        .version("v0.1")
+        .arg(Arg::with_name("load")
+            .short("l")
+            .long("load")
+            .value_name("FILE")
+            .help("Loads the specified ROM")
+            .takes_value(true))
+        .arg(Arg::with_name("debug")
+            .short("d")
+            .long("debug")
+            .help("Enables debugging"));
 
-    // TODO: Commandline arguments parser
-    let result = match nfd::open_file_dialog(None, None).unwrap() {
-        Response::Okay(file_path) => file_path,
-        _ => {
-            println!("No file selected.");
-            return;
-        },
+    let args = app.get_matches();
+
+    println!("Oxidgb v0.1");
+
+    let file = match args.value_of("config") {
+        Some(data) => data.to_string(),
+        None       => {
+            // Open a file dialog
+            match nfd::open_file_dialog(Some("gb"), None).unwrap() {
+                Response::Okay(file_path) => file_path,
+                _ => {
+                    println!("No file selected.");
+                    exit(2);
+                },
+            }
+        }
     };
 
+    let rom_path = Path::new(&file);
+    if !rom_path.exists() {
+        println!("Specified file does not exist.");
+        exit(2);
+    }
+
     // Load game ROM
-    let rom = GameROM::build(Path::new(&result));
+    let rom = GameROM::build(rom_path);
 
     // Build memory
     let memory = GBMemory::build(rom);
@@ -42,8 +74,8 @@ fn main() {
     // Build CPU
     let mut cpu = CPU::build(memory);
 
-    //println!("Opening ROM: {}", cpu.mem.rom.name);
-    //println!("Mapper type: {:?}", cpu.mem.rom.cart_type);
+    println!("Opening ROM: {}", cpu.mem.rom.name);
+    println!("Mapper type: {:?}", cpu.mem.rom.cart_type);
 
     // Build a window
     let sdl_context = sdl2::init().unwrap();
@@ -106,14 +138,13 @@ fn main() {
                 &Keycode::Z     => GameboyButton::B,
                 &Keycode::A     => GameboyButton::SELECT,
                 &Keycode::S     => GameboyButton::START,
-                _              => continue
+                _               => continue
             };
             gb_buttons.push(result);
         }
 
         cpu.mem.set_input(&gb_buttons);
 
-        // The rest of the game loop goes here...
         cpu.run();
 
         if cpu.mem.gpu.is_enabled() {
