@@ -9,7 +9,9 @@ use core::mem::GBMemory;
 /// Storage for various I/O registers.
 pub struct IORegisters {
     pub p1 : u8,    // 0x00 - Joypad info and controller (R/W)
-    pub iflag : u8, // (if) 0x0F - Interrupt Flag (R/W)
+    pub iflag : u8, // 0x0F - (if) Interrupt Flag (R/W)
+    pub stat : u8,  // 0x41 - LCDC Status (R/W)
+    pub lyc : u8,   // 0x45 - LY Compare (R/W)
     pub dma : u8,   // 0x46 - DMA Transfer and Start Address (W)
 }
 
@@ -18,6 +20,8 @@ impl IORegisters {
         return IORegisters {
             p1 : 0,
             iflag : 0,
+            stat : 0,
+            lyc : 0,
             dma : 0
         }
     }
@@ -49,6 +53,18 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         }
         0x0F => mem.ioregs.iflag,
         0x40 => mem.gpu.lcdc,
+        0x41 => {
+            let stat = mem.ioregs.stat & 0b1111000;
+            let mode = (mem.gpu.mode as u8) & 0b11;
+            let mut result = stat | mode;
+
+            // Handle coin
+            if mem.ioregs.lyc == mem.gpu.current_line {
+                result |= 1 << 2;
+            }
+
+            result
+        }
         0x42 => mem.gpu.scy,
         0x43 => mem.gpu.scx,
         0x44 => mem.gpu.current_line,
@@ -79,6 +95,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x40 => mem.gpu.lcdc = val,
         0x42 => mem.gpu.scy = val,
         0x43 => mem.gpu.scx = val,
+        0x45 => mem.ioregs.lyc = val,
         0x46 => {
             mem.ioregs.dma = val;
             execute_dma(mem);

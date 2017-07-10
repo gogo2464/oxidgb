@@ -6,13 +6,13 @@
 
 pub const PITCH : usize = 3;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 #[allow(dead_code)] // For debug messages
 pub enum GPUMode {
-    Vblank,
-    Hblank,
-    OamScanline,
-    VramScanline
+    Vblank = 0,
+    Hblank = 1,
+    OamScanline = 2,
+    VramScanline = 3
 }
 
 pub struct GPU {
