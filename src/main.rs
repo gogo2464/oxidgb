@@ -6,6 +6,7 @@ mod core;
 use sdl2::event::Event;
 use sdl2::pixels;
 use sdl2::pixels::PixelFormatEnum;
+use sdl2::pixels::PixelMasks;
 use sdl2::keyboard::Keycode;
 
 use nfd::Response;
@@ -57,10 +58,20 @@ fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let texture_creator = canvas.texture_creator();
 
-    let mut texture = texture_creator.create_texture_streaming(
-        PixelFormatEnum::RGB888, 160, 144).unwrap();
+    let mask = PixelMasks {
+        bpp : 8 * 3,
+        rmask : 0x0000FF,
+        gmask : 0x00FF00,
+        bmask : 0xFF0000,
+        amask : 0
+    };
 
-    canvas.set_draw_color(pixels::Color::RGB(0, 0, 0));
+    let mut texture = texture_creator.create_texture_streaming(
+        PixelFormatEnum::from_masks(mask), 160, 144).unwrap();
+
+    canvas.set_draw_color(pixels::Color::RGB(cpu.mem.gpu.palette[0],
+                                             cpu.mem.gpu.palette[1],
+                                             cpu.mem.gpu.palette[2]));
     canvas.clear();
     canvas.present();
 
@@ -82,10 +93,13 @@ fn main() {
         // The rest of the game loop goes here...
         cpu.run();
 
-        texture.update(None, &cpu.mem.gpu.pixel_data, 160 * PITCH).unwrap();
+        if cpu.mem.gpu.is_enabled() {
+            texture.update(None, &cpu.mem.gpu.pixel_data, 160 * PITCH).unwrap();
 
-        canvas.clear();
-        canvas.copy(&texture, None, None).unwrap();
+            canvas.clear();
+            canvas.copy(&texture, None, None).unwrap();
+        }
+
         canvas.present();
 
         let max_frame = Duration::from_millis(16);

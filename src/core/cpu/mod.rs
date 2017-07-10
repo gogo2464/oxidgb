@@ -27,29 +27,33 @@ pub struct CPU {
 impl CPU {
     /// Ticks the CPU + other components one instruction.
     pub fn tick(&mut self) -> bool {
-        // Read instruction
-        let current_instr = self.regs.pc;
+        let cycles = if !self.stopped && !self.halted {
+            // Read instruction
+            let current_instr = self.regs.pc;
 
-        let mut raw_instruction = self.mem.read(current_instr) as u16;
+            let mut raw_instruction = self.mem.read(current_instr) as u16;
 
-        //println!("{:02X} = {:02X}", current_instr, raw_instruction);
+            //println!("{:02X} = {:02X}", current_instr, raw_instruction);
 
-        self.regs.pc = self.regs.pc.wrapping_add(1);
-
-        /*println!("Read instruction {:02X} from {:04X}", raw_instruction & 0xFF, current_instr);
-        println!("af = {:04X}", self.regs.get_af());
-        println!("bc = {:04X}", self.regs.get_bc());
-        println!("de = {:04X}", self.regs.get_de());
-        println!("hl = {:04X}", self.regs.get_hl());
-        println!("sp = {:04X}", self.regs.sp);
-        println!("pc = {:04X}", self.regs.pc);*/
-
-        if raw_instruction == 0xCB {
-            raw_instruction = ((self.mem.read(current_instr + 1) as u16) << 8) | (raw_instruction);
             self.regs.pc = self.regs.pc.wrapping_add(1);
-        }
 
-        let cycles = execute_instruction(self, raw_instruction, current_instr);
+            /*println!("Read instruction {:02X} from {:04X}", raw_instruction & 0xFF, current_instr);
+            println!("af = {:04X}", self.regs.get_af());
+            println!("bc = {:04X}", self.regs.get_bc());
+            println!("de = {:04X}", self.regs.get_de());
+            println!("hl = {:04X}", self.regs.get_hl());
+            println!("sp = {:04X}", self.regs.sp);
+            println!("pc = {:04X}", self.regs.pc);*/
+
+            if raw_instruction == 0xCB {
+                raw_instruction = ((self.mem.read(current_instr + 1) as u16) << 8) | (raw_instruction);
+                self.regs.pc = self.regs.pc.wrapping_add(1);
+            }
+
+            execute_instruction(self, raw_instruction, current_instr)
+        } else {
+            64
+        };
 
         // After
         // Handle interrupts

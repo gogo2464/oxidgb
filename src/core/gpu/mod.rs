@@ -4,7 +4,7 @@
  * Renders graphics into a framebuffer
 **/
 
-pub const PITCH : usize = 4;
+pub const PITCH : usize = 3;
 
 #[derive(Debug)]
 #[allow(dead_code)] // For debug messages
@@ -18,7 +18,7 @@ pub enum GPUMode {
 pub struct GPU {
     pub pixel_data : [u8; 160 * 144 * PITCH],
     pub mode : GPUMode,
-    pub palette : [u8; 4 * PITCH],
+    pub palette : [u8; 4 * 3],
 
     pub vram : [u8; 8192],
     pub oam : [u8; 160],
@@ -50,9 +50,9 @@ impl GPU {
 
                     if self.current_line > 153 {
                         // VBlank is done, empty our framebuffer
-                        for i in 0 .. 160 * 144 * 3 {
+                        for i in 0 .. 160 * 144 * PITCH {
                             // TODO: Fill with palette blanks
-                            self.pixel_data[i] = 0;
+                            self.pixel_data[i] = 0xFF;
                         }
 
                         self.current_line = 0;
@@ -93,6 +93,11 @@ impl GPU {
         }
 
         return false;
+    }
+
+    /// Returns if the screen is currently enabled.
+    pub fn is_enabled(&self) -> bool {
+        self.lcdc >> 7 & 0x1 == 1
     }
 
     /// Draws a pixel to the backing framebuffer, based upon the overall
@@ -323,7 +328,7 @@ impl GPU {
 
                     // If this pixel is filled in, render it (scaled) to the screen
                     if has_priority || !has_priority
-                        && self.pixel_data[array_pos * PITCH] == self.palette[0] {
+                        && (self.pixel_data[array_pos * PITCH] & 0xFF) as u8 == self.palette[0] {
                         self.draw_pixel(array_pos, combined);
                     }
                 }
@@ -336,7 +341,7 @@ impl GPU {
         return GPU {
             pixel_data : [0xFF; 160 * 144 * PITCH],
             mode : GPUMode::Hblank,
-            palette : [224,248,208,0xFF, 136,192,112,0xFF, 52,104,86,0xFF, 8,24,32,0xFF], // BGB palette
+            palette : [224,248,208, 136,192,112, 52,104,86, 8,24,32], // BGB palette
 
             vram : [0; 8192],
             oam : [0; 160],
