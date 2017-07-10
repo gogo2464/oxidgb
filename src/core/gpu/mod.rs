@@ -190,15 +190,16 @@ impl GPU {
         }
 
         // -- Window
-        let wx = self.wx & 0xFF;
-        let wy = self.wy & 0xFF;
+        let wx = (self.wx & 0xFF) as u16;
+        let wy = (self.wy & 0xFF) as u16;
+
         if window_display {
             let mut x = -(wx as i16) + 7;
             let y = (self.current_line as i16) - (wy as i16);
 
             for col in 0..160 {
                 if y < 0 || y >= 144
-                    || self.current_line >= wy + 144
+                    || self.current_line as u16 >= wy + 144
                     || wx >= 160 || wy >= 144 {
                     break
                 }

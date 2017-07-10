@@ -4,6 +4,10 @@
  * Handles the Gameboy's memory bus.
 **/
 
+use core::input::GameboyInput;
+use core::input::GameboyButton;
+use core::input::build_input;
+
 use core::rom::GameROM;
 use core::gpu::GPU;
 use core::io;
@@ -18,6 +22,8 @@ pub struct GBMemory {
     pub dirty_interrupts : bool, // If the CPU should handle interrupts
     pub interrupt_reg : u8,
     pub ioregs : IORegisters,
+
+    pub buttons : GameboyInput,
 }
 
 impl GBMemory {
@@ -121,6 +127,11 @@ impl GBMemory {
         self.write(ptr + 1, ((val >> 8) & 0xFF) as u8);
     }
 
+    /// Sets the input registers.
+    pub fn set_input(&mut self, input : &[GameboyButton]) {
+        self.buttons = build_input(input);
+    }
+
     /// Builds a new memory manager.
     pub fn build(rom : GameROM) -> GBMemory {
         return GBMemory {
@@ -131,7 +142,12 @@ impl GBMemory {
 
             dirty_interrupts : false,
             interrupt_reg : 0,
-            ioregs : IORegisters::build()
+            ioregs : IORegisters::build(),
+
+            buttons : GameboyInput {
+                p14 : 0,
+                p15 : 0
+            }
         }
     }
 }

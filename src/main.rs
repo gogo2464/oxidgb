@@ -15,6 +15,7 @@ use std::{thread, time};
 use std::time::Duration;
 use std::path::Path;
 
+use core::input::GameboyButton;
 use core::rom::GameROM;
 use core::mem::GBMemory;
 use core::cpu::CPU;
@@ -89,6 +90,28 @@ fn main() {
                 _ => {}
             }
         }
+
+        // Update input
+        let keys : Vec<sdl2::keyboard::Keycode> = event_pump.keyboard_state().pressed_scancodes()
+                                                    .filter_map(Keycode::from_scancode).collect();
+        let mut gb_buttons = Vec::new();
+
+        for x in &keys {
+            let result = match x {
+                &Keycode::Up    => GameboyButton::UP,
+                &Keycode::Down  => GameboyButton::DOWN,
+                &Keycode::Left  => GameboyButton::LEFT,
+                &Keycode::Right => GameboyButton::RIGHT,
+                &Keycode::X     => GameboyButton::A,
+                &Keycode::Z     => GameboyButton::B,
+                &Keycode::A     => GameboyButton::SELECT,
+                &Keycode::S     => GameboyButton::START,
+                _              => continue
+            };
+            gb_buttons.push(result);
+        }
+
+        cpu.mem.set_input(&gb_buttons);
 
         // The rest of the game loop goes here...
         cpu.run();
