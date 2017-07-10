@@ -262,7 +262,7 @@ pub fn reti(cpu : &mut CPU) -> u8 {
     cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
     cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
 
-    cpu.interrupts_countdown = 1;
+    cpu.interrupts_enabled = true; // Doesn't miss a cycle
     
     return 16 /* Cycles */;
 }

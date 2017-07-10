@@ -27,6 +27,26 @@ pub struct CPU {
 impl CPU {
     /// Ticks the CPU + other components one instruction.
     pub fn tick(&mut self) -> bool {
+        // Before tick
+        if self.mem.dirty_interrupts {
+            if self.mem.ioregs.iflag != 0 {
+                for bit in 0 .. 8 {
+                    if (self.mem.ioregs.iflag >> bit) & 0x1 == 1 {
+                        let interrupt = InterruptType::get_by_bit(bit);
+                        match interrupt {
+                            Some(value) => {
+                                self.try_interrupt(value);
+                            },
+                            None => {
+                                println!("WARN: Unable to handle unknown interrupt");
+                            }
+                        }
+                        break
+                    }
+                }
+            }
+        }
+
         let cycles = if !self.stopped && !self.halted {
             // Read instruction
             let current_instr = self.regs.pc;
@@ -52,7 +72,7 @@ impl CPU {
 
             execute_instruction(self, raw_instruction, current_instr)
         } else {
-            64
+            64 // TODO: Is this really the best?
         };
 
         // After
@@ -62,25 +82,6 @@ impl CPU {
 
             if self.interrupts_countdown == -1 {
                 self.interrupts_enabled = true;
-            }
-        }
-
-        if self.mem.dirty_interrupts {
-            if self.mem.ioregs.iflag != 0 {
-                for bit in 0 .. 8 {
-                    if (self.mem.ioregs.iflag >> bit) & 0x1 == 1 {
-                        let interrupt = InterruptType::get_by_bit(bit);
-                        match interrupt {
-                            Some(value) => {
-                                self.try_interrupt(value);
-                            },
-                            None => {
-                                println!("WARN: Unable to handle unknown interrupt");
-                            }
-                        }
-                        break
-                    }
-                }
             }
         }
 
@@ -124,7 +125,8 @@ impl CPU {
         }
 
         if (self.mem.interrupt_reg >> interrupt as u8) & 0x1 == 0x1 {
-            self.halted = false;
+            // TODO: 20 cycle event
+            self.halted = false; // TODO: extra 4 cycles if true
             self.stopped = false;
 
             if !self.interrupts_enabled {

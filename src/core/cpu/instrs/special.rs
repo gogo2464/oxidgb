@@ -104,7 +104,7 @@ pub fn halt(cpu : &mut CPU) -> u8 {
 
 /// Unknown instruction handler.
 pub fn bad_instruction(instr : u16) -> u8 {
-    println!("WARNING: Bad instruction: ${:04x}", instr);
-    
-    return 4 /* Cycles for fetch */;
+    panic!("Bad instruction: ${:04x}. This would freeze a Gameboy!", instr);
+
+    // 4 cycles for opcode fetch
 }

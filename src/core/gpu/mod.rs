@@ -43,8 +43,8 @@ impl GPU {
 
         match self.mode {
             GPUMode::Vblank => {
-                if self.internal_clock >= 4560 {
-                    self.internal_clock -= 4560;
+                if self.internal_clock >= 456 {
+                    self.internal_clock -= 456;
 
                     self.current_line += 1;
 
@@ -61,7 +61,7 @@ impl GPU {
                 }
             }
             GPUMode::Hblank => {
-                if self.internal_clock >= 204 {
+                if self.internal_clock >= 204 { // 204 * 144 = 29376 cycles for DMG
                     self.internal_clock -= 204;
 
                     self.current_line += 1;

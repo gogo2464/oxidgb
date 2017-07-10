@@ -37,16 +37,12 @@ impl GBMemory {
             0xFF80 ... 0xFFFE => { // High internal RAM
                 return self.high_ram[(ptr - 0xFF80) as usize];
             }
-            0xFF4C ... 0xFF7F => { // Unusable
-                println!("WARN: Reading from unreadable memory: {:04x}", ptr);
-                return 0xFF;
-            }
-            0xFF00 ... 0xFF4B => { // I/O Registers
+            0xFF00 ... 0xFF7F => { // I/O Registers
                 return io::read(self, (ptr & 0xFF) as u8);
             }
             0xFEA0 ... 0xFEFF => { // Unusable
                 println!("WARN: Reading from unreadable memory: {:04x}", ptr);
-                return 0xFF;
+                return 0x00;
             }
             0xFE00 ... 0xFE9F => { // OAM
                 return self.gpu.oam[(ptr - 0xFE00) as usize];
