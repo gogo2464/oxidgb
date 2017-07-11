@@ -5,6 +5,7 @@
 **/
 
 use core::mem::GBMemory;
+use core::gpu::GPUMode;
 
 /// Storage for various I/O registers.
 pub struct IORegisters {
@@ -63,25 +64,35 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x0F => mem.ioregs.iflag,
         0x40 => mem.gpu.lcdc,
         0x41 => {
-            let stat = mem.gpu.stat & 0b1111000;
-            let mode = (mem.gpu.mode as u8) & 0b11;
-            let mut result = stat | mode;
+            if mem.gpu.lcdc >> 7 & 0x1 == 0 {
+                // Screen disabled
+                (1 << 7)
+            } else {
+                let stat = mem.gpu.stat & 0b1111000;
+                let mode = (mem.gpu.mode as u8) & 0b11;
+                let mut result = stat | mode;
 
-            // Handle coin
-            if mem.gpu.lyc == mem.gpu.current_line {
-                result |= 1 << 2;
+                // Handle coin
+                if mem.gpu.lyc == mem.gpu.current_line {
+                    result |= 1 << 2;
+                }
+
+                result | (1 << 7)
             }
-
-            result
         }
         0x42 => mem.gpu.scy,
         0x43 => mem.gpu.scx,
         0x44 => mem.gpu.current_line,
+        0x45 => mem.gpu.lyc,
         0x47 => mem.gpu.bgp,
         0x48 => mem.gpu.obp0,
         0x49 => mem.gpu.obp1,
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
+        0x40 ... 0xFF => {
+            println!("Unknown I/O register: {:02x}", ptr);
+            0xFF
+        },
         _ => {
             //println!("Unknown I/O register: {:04x}", ptr);
             0xFF
@@ -105,7 +116,19 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
             mem.ioregs.iflag = val;
             mem.dirty_interrupts = true;
         },
-        0x40 => mem.gpu.lcdc = val,
+        0x40 => {
+            let old_bit = mem.gpu.lcdc >> 7;
+            let changed_bit = val >> 7;
+            if old_bit != changed_bit && changed_bit == 0 {
+                if mem.gpu.mode != GPUMode::Vblank {
+                    panic!("Disabling/enabling LCD during non-vblank! (actual mode: {:?})",
+                           mem.gpu.mode);
+                }
+
+                mem.gpu.current_line = 0;
+            }
+            mem.gpu.lcdc = val;
+        },
         0x41 => mem.gpu.stat = val,
         0x42 => mem.gpu.scy = val,
         0x43 => mem.gpu.scx = val,
@@ -119,6 +142,9 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x49 => mem.gpu.obp1 = val,
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
+        0x40 ... 0xFF => {
+            println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
+        }
         _ => {
             //println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }

@@ -11,8 +11,8 @@ pub const PITCH : usize = 3;
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[allow(dead_code)] // For debug messages
 pub enum GPUMode {
-    Vblank = 0,
-    Hblank = 1,
+    Hblank = 0,
+    Vblank = 1,
     OamScanline = 2,
     VramScanline = 3
 }
@@ -43,6 +43,12 @@ pub struct GPU {
 impl GPU {
     /// Steps the GPU. Returns true if a Vblank interrupt should be thrown.
     pub fn step(&mut self, cycles : u32) -> Option<InterruptType> {
+        let display_screen    = self.lcdc >> 7 & 0x1 == 1;
+
+        if !display_screen {
+            return None;
+        }
+
         self.internal_clock += cycles;
 
         match self.mode {
@@ -68,9 +74,9 @@ impl GPU {
 
                         self.current_line += 1;
 
-                        if self.current_line == 154 {
+                        /*if self.current_line == 154 {
                             return Some(InterruptType::VBLANK);
-                        }
+                        }*/
                     }
                 }
             }
@@ -82,6 +88,7 @@ impl GPU {
 
                     if self.current_line > 143 {
                         self.mode = GPUMode::Vblank;
+                        return Some(InterruptType::VBLANK);
                     } else {
                         self.mode = GPUMode::OamScanline;
                     }
@@ -91,15 +98,15 @@ impl GPU {
                 if self.internal_clock >= 80 {
                     self.internal_clock -= 80;
                     self.mode = GPUMode::VramScanline;
-
-                    self.draw_vram();
-                    self.draw_sprites();
                 }
             }
             GPUMode::VramScanline => {
                 if self.internal_clock >= 172 {
                     self.internal_clock -= 172;
                     self.mode = GPUMode::Hblank;
+
+                    self.draw_vram();
+                    self.draw_sprites();
                 }
             }
         }
@@ -157,9 +164,9 @@ impl GPU {
         let bg_tile_map       = self.lcdc >> 3 & 0x1 == 1;
         let bg_window_display = self.lcdc      & 0x1 == 1;
 
-        if !display_screen {
-            return
-        }
+        //if !display_screen {
+        //    return
+        //}
 
         //lineState.fill(PixelState.EMPTY)
 
@@ -381,14 +388,14 @@ impl GPU {
     pub fn build() -> GPU {
         return GPU {
             pixel_data : [0xFF; 160 * 144 * PITCH],
-            mode : GPUMode::Hblank,
+            mode : GPUMode::Vblank,
             palette : [224,248,208, 136,192,112, 52,104,86, 8,24,32], // BGB palette
 
             vram : [0; 8192],
             oam : [0; 160],
 
             lcdc: 0x91,
-            stat: 0,
+            stat: 0x81, // TODO: verify
             scx: 0,
             scy: 0,
             lyc : 0,
@@ -399,7 +406,7 @@ impl GPU {
             obp1: 0xFF,
 
             internal_clock: 0,
-            current_line: 0,
+            current_line: 0x94,
         };
     }
 }
