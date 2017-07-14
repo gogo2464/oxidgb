@@ -48,9 +48,11 @@ fn main() {
 
     let args = app.get_matches();
 
+    let enable_debugging = args.is_present("debug");
+
     println!("Oxidgb v0.1");
 
-    let file = match args.value_of("config") {
+    let file = match args.value_of("load") {
         Some(data) => data.to_string(),
         None       => {
             // Open a file dialog
@@ -161,7 +163,11 @@ fn main() {
 
         cpu.mem.set_input(&gb_buttons);
 
-        cpu.run(&mut Some(&mut debugger));
+        if enable_debugging {
+            cpu.run(&mut Some(&mut debugger));
+        } else {
+            cpu.run(&mut None);
+        }
 
         if cpu.mem.gpu.is_enabled() {
             texture.update(None, &cpu.mem.gpu.pixel_data, 160 * PITCH).unwrap();

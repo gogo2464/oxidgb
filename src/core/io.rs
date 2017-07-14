@@ -15,6 +15,9 @@ pub struct IORegisters {
     pub tma : u8,   // 0x06 - Timer Modulo (R/W)
     pub tac : u8,   // 0x07 - Timer Control (R/W)
     pub iflag : u8, // 0x0F - (if) Interrupt Flag (R/W)
+    pub nr21 : u8,  // 0x16 - Channel 2 Sound Length/Wave Pattern Duty (R/W)
+    pub nr50 : u8,  // 0x24 - Channel control / ON-OFF / Volume (R/W)
+    pub nr51 : u8,  // 0x25 - Selection of Sound output terminal (R/W)
     pub dma : u8,   // 0x46 - DMA Transfer and Start Address (W)
 }
 
@@ -26,7 +29,10 @@ impl IORegisters {
             div : 0xABCC,
             tima : 0,
             tma : 0,
-            tac : 0,
+            tac : 0xF8,
+            nr21 : 0,
+            nr50 : 0,
+            nr51 : 0,
             iflag : 0,
             dma : 0
         }
@@ -57,11 +63,14 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
 
             output
         }
-        0x04 => ((mem.ioregs.div >> 8) & 0xFF) as u8,
+        0x04 => (mem.ioregs.div >> 8) as u8,
         0x05 => mem.ioregs.tima,
         0x06 => mem.ioregs.tma,
         0x07 => mem.ioregs.tac,
-        0x0F => mem.ioregs.iflag,
+        0x0F => mem.ioregs.iflag | !(0b11111),
+        0x16 => mem.ioregs.nr21,
+        0x24 => mem.ioregs.nr50,
+        0x25 => mem.ioregs.nr51,
         0x40 => mem.gpu.lcdc,
         0x41 => {
             if mem.gpu.lcdc >> 7 & 0x1 == 0 {
@@ -90,11 +99,11 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
         0x40 ... 0xFF => {
-            println!("Unknown I/O register: {:02x}", ptr);
+            //println!("Unknown I/O register: {:02x}", ptr);
             0xFF
         },
         _ => {
-            //println!("Unknown I/O register: {:04x}", ptr);
+            //println!("Unknown I/O register: {:02x}", ptr);
             0xFF
         }
     }
@@ -116,17 +125,33 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
             mem.ioregs.iflag = val;
             mem.dirty_interrupts = true;
         },
+        0x16 => mem.ioregs.nr21 = val,
+        0x24 => mem.ioregs.nr50 = val,
+        0x25 => mem.ioregs.nr51 = val,
         0x40 => {
             let old_bit = mem.gpu.lcdc >> 7;
             let changed_bit = val >> 7;
-            if old_bit != changed_bit && changed_bit == 0 {
-                if mem.gpu.mode != GPUMode::Vblank {
-                    panic!("Disabling/enabling LCD during non-vblank! (actual mode: {:?})",
-                           mem.gpu.mode);
-                }
+            if old_bit != changed_bit {
+                if changed_bit == 0 {
+                    if mem.gpu.mode != GPUMode::Vblank {
+                        panic!("Disabling/enabling LCD during non-vblank! (actual mode: {:?})",
+                               mem.gpu.mode);
+                    }
 
-                mem.gpu.current_line = 0;
+                    mem.gpu.current_line = 0;
+                } else {
+                    mem.gpu.mode = GPUMode::Hblank;
+                    mem.gpu.internal_clock = 0;
+
+                    if (mem.gpu.stat >> 6) & 0x1 == 1 && mem.gpu.lyc == mem.gpu.current_line {
+                        //mem.ioregs.iflag |= 1 << (InterruptType::LCDC as u8);
+                        //mem.dirty_interrupts = true;
+                        println!("Should be interrupting right about... now.");
+                    }
+                    // TODO: Check STAT
+                }
             }
+
             mem.gpu.lcdc = val;
         },
         0x41 => mem.gpu.stat = val,
@@ -143,7 +168,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
         0x40 ... 0xFF => {
-            println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
+            //println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
         _ => {
             //println!("Unknown I/O register: {:02x} = {:02x}", ptr, val);

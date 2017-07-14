@@ -54,30 +54,22 @@ impl GPU {
         match self.mode {
             GPUMode::Vblank => {
                 if self.internal_clock >= 456 {
+                    self.internal_clock -= 456;
                     if self.current_line > 153 {
-                        // TODO: Check to see if this new timing is right
-                        if self.internal_clock >= 4560 {
-                            // TODO: Fix up vblank timing here
-                            self.internal_clock -= 4560;
-
-                            // VBlank is done, empty our framebuffer
-                            for i in 0 .. 160 * 144 * PITCH {
-                                // TODO: Fill with palette blanks
-                                self.pixel_data[i] = 0xFF;
-                            }
-
-                            self.current_line = 0;
-                            self.mode = GPUMode::OamScanline;
+                        // TODO: Fix up vblank timing here - we are one line too slow
+                        // VBlank is done, empty our framebuffer
+                        for x in 0 .. 160 * 144 {
+                            self.draw_pixel(x, 0);
                         }
+
+                        self.current_line = 0;
+                        self.mode = GPUMode::OamScanline;
                     } else {
-                        self.internal_clock -= 456;
-
                         self.current_line += 1;
-
-                        /*if self.current_line == 154 {
-                            return Some(InterruptType::VBLANK);
-                        }*/
                     }
+
+
+                    return self.check_lyc();
                 }
             }
             GPUMode::Hblank => {
@@ -92,12 +84,16 @@ impl GPU {
                     } else {
                         self.mode = GPUMode::OamScanline;
                     }
+
+                    return self.check_lyc();
                 }
             }
             GPUMode::OamScanline => {
                 if self.internal_clock >= 80 {
                     self.internal_clock -= 80;
                     self.mode = GPUMode::VramScanline;
+
+                    return self.check_interrupt();
                 }
             }
             GPUMode::VramScanline => {
@@ -107,11 +103,13 @@ impl GPU {
 
                     self.draw_vram();
                     self.draw_sprites();
+
+                    return self.check_interrupt();
                 }
             }
         }
 
-        return self.check_interrupt();
+        return None;
     }
 
     /// Returns if the screen is currently enabled.
@@ -119,15 +117,18 @@ impl GPU {
         self.lcdc >> 7 & 0x1 == 1
     }
 
+    fn check_lyc(&mut self) -> Option<InterruptType> {
+        // Check LYC Compare Interrupt (bit 6)
+        if (self.stat >> 6) & 0x1 == 1 && self.lyc == self.current_line {
+            return Some(InterruptType::LCDC);
+        }
+
+        return self.check_interrupt();
+    }
+
     /// Checks to see if any interrupts should be thrown.
     fn check_interrupt(&mut self) -> Option<InterruptType> {
         let stat = self.stat;
-
-        // Check LYC
-        if self.mode == GPUMode::OamScanline && (stat >> 6) & 0x1 == 1
-            && self.lyc == self.current_line {
-            return Some(InterruptType::LCDC);
-        }
 
         // Check OAM STAT interrupt
         if self.mode == GPUMode::OamScanline && (stat >> 5) & 0x1 == 1 {
@@ -157,18 +158,11 @@ impl GPU {
     }
 
     fn draw_vram(&mut self) {
-        let display_screen    = self.lcdc >> 7 & 0x1 == 1;
         let window_tile_map   = self.lcdc >> 6 & 0x1 == 1;
         let window_display    = self.lcdc >> 5 & 0x1 == 1;
         let tile_data         = self.lcdc >> 4 & 0x1 == 1;
         let bg_tile_map       = self.lcdc >> 3 & 0x1 == 1;
         let bg_window_display = self.lcdc      & 0x1 == 1;
-
-        //if !display_screen {
-        //    return
-        //}
-
-        //lineState.fill(PixelState.EMPTY)
 
         // -- Tiles
         if bg_window_display {
@@ -197,13 +191,13 @@ impl GPU {
                     tile_pointer = (0x1800 + y_tile * 32 + x_tile) as usize;
                 }
 
-                let data = self.vram[tile_pointer];
+                let data = self.vram[tile_pointer] as i8 as i16;
 
                 let tex_pos: usize;
                 if tile_data {
-                    tex_pos = ((((data as i8) as i16 & 0xFF) * 16) + (y % 8) * 2) as usize;
+                    tex_pos = (((data & 0xFF) * 16) + (y % 8) * 2) as usize;
                 } else {
-                    tex_pos = (0x1000 + ((data as i8) as i16 * 16) + (y % 8) * 2) as usize;
+                    tex_pos = (0x1000 + (data * 16) + (y % 8) * 2) as usize;
                 }
 
                 // Row is two bytes (16bits)
@@ -227,11 +221,10 @@ impl GPU {
                     x -= 32 * 8
                 }
 
-                if pos >= self.pixel_data.len() {
+                if pos * PITCH >= self.pixel_data.len() {
                     continue
                 }
 
-                //lineState[col] = PixelState.BACKGROUND
                 self.draw_pixel(pos, combined);
             }
         }
@@ -294,11 +287,10 @@ impl GPU {
                     continue
                 }
 
-                if pos >= self.pixel_data.len() {
+                if pos * PITCH >= self.pixel_data.len() {
                     continue
                 }
 
-                //lineState[col] = PixelState.WINDOW
                 self.draw_pixel(pos, combined);
             }
         }

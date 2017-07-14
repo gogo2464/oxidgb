@@ -64,14 +64,17 @@ impl GameROM {
                 self.backing_data[ptr as usize]
             }
             CartridgeType::RomMbc1 |
-                CartridgeType::RomMbc1Ram |
-                CartridgeType::RomMbc1RamBatt |
-                CartridgeType::RomMbc3RamBatt  => {
+            CartridgeType::RomMbc1Ram |
+            CartridgeType::RomMbc1RamBatt |
+            CartridgeType::RomMbc2 |
+            CartridgeType::RomMbc2Batt |
+            CartridgeType::RomMbc3RamBatt |
+            CartridgeType::RomMbc3TimerRamBatt => {
                 if ptr < 0x4000 {
                     self.backing_data[ptr as usize]
                 } else {
                     let target = ptr as usize + (self.current_bank as usize - 1)
-                                            * 0x4000;
+                        * 0x4000;
                     if target >= self.backing_data.len() {
                         println!("Out of range read for MBC1!");
                         0xFF
@@ -98,12 +101,59 @@ impl GameROM {
     pub fn write(&mut self, ptr : u16, val : u8) {
         match self.cart_type {
             CartridgeType::RomOnly => {
-                println!("WARN: Writing to ROM: {:04x} = {:02x}", ptr, val);
+                //println!("WARN: Writing to ROM: {:04x} = {:02x}", ptr, val);
             }
             CartridgeType::RomMbc1 |
             CartridgeType::RomMbc1Ram |
-            CartridgeType::RomMbc1RamBatt |
-            CartridgeType::RomMbc3RamBatt => {
+            CartridgeType::RomMbc1RamBatt => {
+                match ptr {
+                    0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
+                        println!("STUB: ROM bank activation: {}", val > 0);
+                    }
+                    0x2000 ... 0x3FFF => { // Bank switching
+                        self.current_bank = val & 0b11111;
+                        if self.current_bank < 1 {
+                            self.current_bank = 1;
+                        }
+                    }
+                    0x6000 ... 0x7FFF => { // Memory models
+                        println!("WARN: MBC1 memory models are not supported!");
+                    }
+                    _ => {
+                        println!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
+                                 ptr, val);
+                    }
+
+                }
+            },
+            CartridgeType::RomMbc2 |
+            CartridgeType::RomMbc2Batt => {
+                match ptr {
+                    0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
+                        println!("STUB: ROM bank activation: {}", val > 0);
+                    }
+                    0x2000 ... 0x3FFF => { // Bank switching
+                        if (ptr >> 8) & 0x1 != 1 {
+                            println!("MBC2: Invalid bank switch command!");
+                        } else {
+                            self.current_bank = val & 0b1111;
+                            if self.current_bank < 1 {
+                                self.current_bank = 1;
+                            }
+                        }
+                    }
+                    0x6000 ... 0x7FFF => { // Memory models
+                        println!("WARN: MBC1 memory models are not supported!");
+                    }
+                    _ => {
+                        println!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
+                                 ptr, val);
+                    }
+
+                }
+            },
+            CartridgeType::RomMbc3RamBatt |
+            CartridgeType::RomMbc3TimerRamBatt => {
                 match ptr {
                     0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
                         println!("STUB: ROM bank activation: {}", val > 0);

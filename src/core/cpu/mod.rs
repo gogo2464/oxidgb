@@ -24,7 +24,12 @@ pub struct CPU {
     pub halted : bool,
 
     /// If the timer was high
-    pub timer_armed : bool
+    pub timer_armed : bool,
+    pub timer_counter : i32,
+    pub timer_enabled : bool,
+
+    pub cycle_counter : u32,
+    pub timer_invoke_counter : u32
 }
 
 impl CPU {
@@ -32,20 +37,49 @@ impl CPU {
     pub fn tick(&mut self, debugger : &mut Option<&mut GameboyDebugger>) -> bool {
         // Before tick
         if self.mem.dirty_interrupts {
-            if self.mem.ioregs.iflag != 0 {
-                for bit in 0 .. 8 {
-                    if (self.mem.ioregs.iflag >> bit) & 0x1 == 1 {
-                        let interrupt = InterruptType::get_by_bit(bit);
-                        match interrupt {
-                            Some(value) => {
-                                self.try_interrupt(value);
-                            },
-                            None => {
-                                println!("WARN: Unable to handle unknown interrupt");
+            //self.mem.dirty_interrupts = false;
+            let available_interrupts = self.mem.ioregs.iflag & self.mem.interrupt_reg;
+
+            for bit in 0 .. 5 {
+                if (available_interrupts >> bit) & 0x1 == 1 {
+                    let interrupt = InterruptType::get_by_bit(bit);
+                    match interrupt {
+                        Some(value) => {
+                            println!("Trying interrupt {:?} from {}", value, bit);
+                            if self.try_interrupt(value) {
+                                //has_thrown_interrupt = true;
+                                break
                             }
+                        },
+                        None => {
+                            panic!("WARN: Unable to handle unknown interrupt");
                         }
-                        break
                     }
+                }
+            }
+        }
+
+        let timer_active = (((self.mem.ioregs.tac >> 2) & 0x1) as u16) == 1;
+        if timer_active {
+            let tac = self.mem.ioregs.tac;
+            let speed = tac & 0b11;
+            let freq = match speed {
+                0b00 => 4096,
+                0b01 => 262144,
+                0b10 => 65536,
+                0b11 => 16384,
+                _    => panic!("Bad clock speed: {}", speed)
+            };
+
+            if self.timer_counter > 4194304 / freq {
+                self.timer_counter -= 4194304 / freq;
+
+                if self.mem.ioregs.tima == 0xFF {
+                    self.mem.ioregs.tima = self.mem.ioregs.tma;
+                    self.throw_interrupt(InterruptType::TIMER);
+                    self.timer_invoke_counter += 1;
+                } else {
+                    self.mem.ioregs.tima += 1;
                 }
             }
         }
@@ -91,40 +125,18 @@ impl CPU {
         // Handle timers
         let cur_value = self.mem.ioregs.div;
         self.mem.ioregs.div = cur_value.wrapping_add(cycles as u16);
+        //self.cycle_counter += cycles as u32;
 
-        // TAC timer
-        let tac = self.mem.ioregs.tac;
-        let freq = tac & 0b11;
-        let bit = match freq {
-            0 => 9,
-            1 => 3,
-            2 => 5,
-            3 => 7,
-            _ => panic!("Programmer error: Unknown frequency: {}", freq)
-        };
-
-        let tac_state = ((self.mem.ioregs.div >> bit) & 0x1 & ((tac >> 2) & 0x1) as u16) == 1;
-        if tac_state {
-            self.timer_armed = true;
-        } else if self.timer_armed {
-            self.timer_armed = false;
-
-            if self.mem.ioregs.tima == 0xFF {
-                // Timer interrupt firing!
-                self.mem.ioregs.tima = self.mem.ioregs.tma;
-                println!("Timer interrupt: {}", self.mem.ioregs.tma);
-                self.throw_interrupt(InterruptType::TIMER);
-            } else {
-                self.mem.ioregs.tima += 1;
-            }
-        }
+        // if timer_active {
+            //self.timer_counter += cycles as i32;
+        //}
 
         // Handle GPU
         let gpu_result = self.mem.gpu.step(cycles as u32);
 
         match gpu_result {
             Some(value) => {
-                println!("GPU throwing interrupt: {:?}", value);
+                //println!("GPU throwing interrupt: {:?}", value);
                 self.throw_interrupt(value);
                 if value == InterruptType::VBLANK {
                     return true
@@ -138,15 +150,22 @@ impl CPU {
 
     /// Runs a iteration of the CPU
     pub fn run(&mut self, mut debugger : &mut Option<&mut GameboyDebugger>) {
+        self.cycle_counter = 0;
+        self.timer_invoke_counter = 0;
+
         while !self.tick(&mut debugger) {}
+
+        //println!("Counts: {} + {}", self.cycle_counter, self.timer_invoke_counter);
     }
 
     /// Registers that a interrupt should be thrown.
     pub fn throw_interrupt(&mut self, interrupt : InterruptType) -> bool {
         // Check to see if we are in a STOP event
-        if self.stopped && !(interrupt == InterruptType::KEYPAD) {
+        if self.stopped && interrupt != InterruptType::KEYPAD {
             return false;
         }
+
+        //panic!("Throwing: {:?}", interrupt);
 
         // Set the IF flag
         self.mem.ioregs.iflag |= 1 << (interrupt as u8);
@@ -158,44 +177,37 @@ impl CPU {
     /// Callback from memory to try to throw a memory interrupt.
     pub fn try_interrupt(&mut self, interrupt : InterruptType) -> bool {
         if !self.interrupts_enabled && !self.halted {
-            //println!("Unable to throw interrupt when it is not active!");
             return false;
         }
 
-        if self.interrupts_enabled {
-            self.mem.ioregs.iflag = 0
-        }
+        // TODO: 20 cycle event
+        self.halted = false; // TODO: extra 4 cycles if true
+        self.stopped = false;
 
-        if (self.mem.interrupt_reg >> interrupt as u8) & 0x1 == 0x1 {
-            // TODO: 20 cycle event
-            self.halted = false; // TODO: extra 4 cycles if true
-            self.stopped = false;
-
-            if !self.interrupts_enabled {
-                return true;
-            }
-
-            self.interrupts_enabled = false;
-
-            println!("Throwing interrupt: {:?}", interrupt);
-
-            // Push PC to stack
-            self.regs.sp -= 2;
-            self.mem.write_short(self.regs.sp, self.regs.pc);
-
-            // Jump to interrupt service
-            self.regs.pc = match interrupt {
-                InterruptType::VBLANK => 0x0040,
-                InterruptType::LCDC => 0x0048,
-                InterruptType::TIMER => 0x0050,
-                InterruptType::SERIAL => 0x0058,
-                InterruptType::KEYPAD => 0x0060
-            };
-
+        if !self.interrupts_enabled {
             return true;
         }
 
-        return false;
+        self.mem.ioregs.iflag &= !(1 << interrupt as u8);
+
+        self.interrupts_enabled = false;
+
+        println!("Throwing interrupt: {:?}", interrupt);
+
+        // Push PC to stack
+        self.regs.sp -= 2;
+        self.mem.write_short(self.regs.sp, self.regs.pc);
+
+        // Jump to interrupt service
+        self.regs.pc = match interrupt {
+            InterruptType::VBLANK => 0x0040,
+            InterruptType::LCDC => 0x0048,
+            InterruptType::TIMER => 0x0050,
+            InterruptType::SERIAL => 0x0058,
+            InterruptType::KEYPAD => 0x0060
+        };
+
+        return true;
     }
 
     /// Builds a CPU from the specified memory module.
@@ -207,7 +219,11 @@ impl CPU {
             interrupts_countdown : -1,
             stopped : false,
             halted : false,
-            timer_armed : false
+            timer_counter : 0,
+            timer_enabled : false,
+            timer_armed : false,
+            cycle_counter : 0,
+            timer_invoke_counter : 0
         }
     }
 

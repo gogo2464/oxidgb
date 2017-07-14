@@ -30,60 +30,61 @@ pub struct GBMemory {
 impl GBMemory {
     /// Reads a value from memory. 0xFF if invalid.
     pub fn read(&self, ptr : u16) -> u8 {
-        //println!("${:04X}: Read", ptr);
-        match ptr {
+        let result = match ptr {
             0xFFFF => { // Interrupt enable reg
-                return self.interrupt_reg;
+                self.interrupt_reg
             }
-            0xFF80 ... 0xFFFE => { // High internal RAM
-                return self.high_ram[(ptr - 0xFF80) as usize];
+            0xFF80 ... 0xFFFE => { // High internal RAM+
+                self.high_ram[(ptr - 0xFF80) as usize]
             }
             0xFF00 ... 0xFF7F => { // I/O Registers
-                return io::read(self, (ptr & 0xFF) as u8);
+                io::read(self, (ptr & 0xFF) as u8)
             }
             0xFEA0 ... 0xFEFF => { // Unusable
                 //println!("WARN: Reading from unreadable memory: {:04x}", ptr);
-                return 0x00;
+                0x00
             }
             0xFE00 ... 0xFE9F => { // OAM
                 // Check if read is valid
-                return match self.gpu.mode {
+                match self.gpu.mode {
                     GPUMode::Vblank |
                     GPUMode::Hblank => self.gpu.oam[(ptr - 0xFE00) as usize],
                     _ => {
-                        println!("Inaccessible OAM: {:04x}", ptr);
+                        //println!("Inaccessible OAM: {:04x}", ptr);
                         0xFF
                     }
-                };
+                }
             }
             0xE000 ... 0xFDFF => { // RAM Echo
-                return self.ram[(ptr - 0xE000) as usize];
+                self.ram[(ptr - 0xE000) as usize]
             }
             0xC000 ... 0xDFFF => { // Internal RAM
-                return self.ram[(ptr - 0xC000) as usize];
+                self.ram[(ptr - 0xC000) as usize]
             }
             0xA000 ... 0xBFFF => { // Switchable RAM
-                return self.rom.read_ram(ptr - 0xA000);
+                self.rom.read_ram(ptr - 0xA000)
             }
             0x8000 ... 0x9FFF => { // GPU
                 // Check if read is valid
-                return match self.gpu.mode {
+                match self.gpu.mode {
                     GPUMode::Vblank |
                     GPUMode::Hblank |
                     GPUMode::OamScanline => self.gpu.vram[(ptr - 0x8000) as usize],
                     _ => {
-                        println!("Inaccessible VRAM: {:04x}", ptr);
+                        //println!("Inaccessible VRAM: {:04x}", ptr);
                         0xFF
                     }
-                };
+                }
             }
             0x0000 ... 0x7FFF => { // Cartridge / Switchable ROM
-                return self.rom.read(ptr);
+                self.rom.read(ptr)
             }
             _ => {
                 panic!("Programmer error: {:04x} was not matched!", ptr);
             }
-        }
+        };
+        //println!("${:04X}: Read  ${:02X}", ptr, result);
+        return result;
     }
 
     /// Writes a value to a memory location if possible.
@@ -109,7 +110,7 @@ impl GBMemory {
                     GPUMode::Vblank |
                     GPUMode::Hblank => self.gpu.oam[(ptr - 0xFE00) as usize] = val,
                     _ => {
-                        println!("Inaccessible OAM: {:04x} = {:02x}", ptr, val);
+                        //println!("Inaccessible OAM: {:04x} = {:02x}", ptr, val);
                     }
                 };
             }
@@ -129,7 +130,7 @@ impl GBMemory {
                     GPUMode::Hblank |
                     GPUMode::OamScanline => self.gpu.vram[(ptr - 0x8000) as usize] = val,
                     _ => {
-                        println!("Inaccessible VRAM: {:04x} = {:02x}", ptr, val);
+                        //println!("Inaccessible VRAM: {:04x} = {:02x}", ptr, val);
                     }
                 };
             }
