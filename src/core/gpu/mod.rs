@@ -195,7 +195,7 @@ impl GPU {
 
                 let tex_pos: usize;
                 if tile_data {
-                    tex_pos = ((data * 16) + (y % 8) * 2) as usize;
+                    tex_pos = (((data & 0xFF) * 16) + (y % 8) * 2) as usize;
                 } else {
                     tex_pos = (0x1000 + (data * 16) + (y % 8) * 2) as usize;
                 }
