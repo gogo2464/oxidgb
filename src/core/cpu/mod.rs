@@ -45,9 +45,7 @@ impl CPU {
                     let interrupt = InterruptType::get_by_bit(bit);
                     match interrupt {
                         Some(value) => {
-                            println!("Trying interrupt {:?} from {}", value, bit);
                             if self.try_interrupt(value) {
-                                //has_thrown_interrupt = true;
                                 break
                             }
                         },
@@ -125,11 +123,11 @@ impl CPU {
         // Handle timers
         let cur_value = self.mem.ioregs.div;
         self.mem.ioregs.div = cur_value.wrapping_add(cycles as u16);
-        //self.cycle_counter += cycles as u32;
+        self.cycle_counter += cycles as u32;
 
-        // if timer_active {
-            //self.timer_counter += cycles as i32;
-        //}
+        if timer_active {
+            self.timer_counter += cycles as i32;
+        }
 
         // Handle GPU
         let gpu_result = self.mem.gpu.step(cycles as u32);
@@ -192,7 +190,7 @@ impl CPU {
 
         self.interrupts_enabled = false;
 
-        println!("Throwing interrupt: {:?}", interrupt);
+        //println!("Throwing interrupt: {:?}", interrupt);
 
         // Push PC to stack
         self.regs.sp -= 2;

@@ -170,7 +170,7 @@ impl GPU {
             if x < 0 {
                 x += 32 * 8
             }
-            let mut y = self.current_line as i16 + self.scy as i16;
+            let mut y = self.current_line as i8 as i16 + self.scy as i8 as i16;
             if y < 0 {
                 y += 32 * 8
             }
@@ -195,7 +195,7 @@ impl GPU {
 
                 let tex_pos: usize;
                 if tile_data {
-                    tex_pos = (((data & 0xFF) * 16) + (y % 8) * 2) as usize;
+                    tex_pos = ((data * 16) + (y % 8) * 2) as usize;
                 } else {
                     tex_pos = (0x1000 + (data * 16) + (y % 8) * 2) as usize;
                 }
