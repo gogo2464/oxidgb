@@ -43,6 +43,7 @@ impl IORegisters {
 
 /// Reads a I/O register.
 pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
+    println!("Read I/O: {:04X}", ptr);
     return match ptr {
         0x00 => {
             let p14 = (mem.ioregs.p1 >> 5) & 0x1 == 1;
@@ -59,7 +60,7 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
             }
 
             output = (!output) & 0b1111;
-            output |= ((if p14 {1} else {0}) >> 5) | ((if p15 {1} else {0}) >> 4);
+            output |= ((if p14 {1} else {0}) << 5) | ((if p15 {1} else {0}) << 4);
 
             output
         }
