@@ -83,7 +83,6 @@ impl IORegisters {
 
 /// Reads a I/O register.
 pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
-    println!("Read I/O: {:04X}", ptr);
     return match ptr {
         0x00 => {
             let p14 = (mem.ioregs.p1 >> 5) & 0x1 == 1;
@@ -164,7 +163,8 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
             0xFF
         },
         _ => {
-            panic!("Unknown I/O register: {:02x}", ptr);
+            println!("WARN: Unknown I/O register: {:02x}", ptr);
+            0xFF
         }
     }
 }
@@ -251,7 +251,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
             println!("WARN: Out of range I/O register: {:02x} = {:02x}", ptr, val);
         },
         _ => {
-            panic!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
+            println!("WARN: Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
     }
 }

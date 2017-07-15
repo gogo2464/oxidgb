@@ -38,7 +38,7 @@ pub enum CartridgeType {
     RomMbc5Rumble     = 0x1C,
     RomMbc5RumbleSram = 0x1D,
     RomMbc5RumbleSramBatt = 0x1E,
-    PocketCamera      = 0x1F,
+    PocketCamera      = 0xFC,
     BandaiTAMA5       = 0xFD,
     HudsonHuC3        = 0xFE,
     HudsonHuC1        = 0xFF
@@ -198,9 +198,9 @@ impl GameROM {
             Err(why) => panic!("couldn't read metadata of {}: {}", path.display(),
                                 why.description()),
             Ok(meta) => meta.len()
-        };
+        } as usize;
 
-        let mut data = Vec::with_capacity(file_size as usize);
+        let mut data = Vec::with_capacity(file_size);
 
         let mut file = match File::open(&path) {
             Err(why) => panic!("couldn't open {}: {}", path.display(),
@@ -210,10 +210,43 @@ impl GameROM {
 
         let read = file.read_to_end(&mut data).unwrap();
 
-        println!("Read: {}, expected: {}", read, file_size);
+        assert_eq!(read, file_size);
+        let rom_size = get_rom_size(data[0x148]);
+
+        if rom_size != file_size {
+            println!("WARN: File size is not equal to what ROM declares!");
+        }
 
         let name = String::from_utf8(data[0x134 .. 0x142].to_vec()).unwrap();
-        let cart_type = unsafe { ::std::mem::transmute(data[0x0147]) };
+        let cart_type = match data[0x0147] {
+            0x00 => CartridgeType::RomOnly,
+            0x01 => CartridgeType::RomMbc1,
+            0x02 => CartridgeType::RomMbc1Ram,
+            0x03 => CartridgeType::RomMbc1RamBatt,
+            0x05 => CartridgeType::RomMbc2,
+            0x06 => CartridgeType::RomMbc2Batt,
+            0x08 => CartridgeType::RomRam,
+            0x09 => CartridgeType::RomRamBatt,
+            0x0B => CartridgeType::RomMMMD1,
+            0x0C => CartridgeType::RomMMMD1Sram,
+            0x0D => CartridgeType::RomMMMD1SramBatt,
+            0x0F => CartridgeType::RomMbc3TimerBatt,
+            0x10 => CartridgeType::RomMbc3TimerRamBatt,
+            0x11 => CartridgeType::RomMbc3 ,
+            0x12 => CartridgeType::RomMbc3Ram,
+            0x13 => CartridgeType::RomMbc3RamBatt,
+            0x19 => CartridgeType::RomMbc5,
+            0x1A => CartridgeType::RomMbc5Ram,
+            0x1B => CartridgeType::RomMbc5RamBatt,
+            0x1C => CartridgeType::RomMbc5Rumble,
+            0x1D => CartridgeType::RomMbc5RumbleSram,
+            0x1E => CartridgeType::RomMbc5RumbleSramBatt,
+            0xFC => CartridgeType::PocketCamera,
+            0xFD => CartridgeType::BandaiTAMA5,
+            0xFE => CartridgeType::HudsonHuC3,
+            0xFF => CartridgeType::HudsonHuC1,
+            _    => panic!("Unknown cartridge type: {:02x}", data[0x0147])
+        };
         let ram_size = get_ram_size(data[0x149]);
 
         let ram = vec![0xFF; ram_size];
@@ -229,6 +262,23 @@ impl GameROM {
             cart_ram : ram,
             ram_size : ram_size
         };
+    }
+}
+
+/// Returns a ROM size for a particular ROM id.
+fn get_rom_size(id : u8) -> usize {
+    return match id {
+        0    => 32   * 1024, // 32  Kbyte
+        1    => 64   * 1024, // 64  Kbyte
+        2    => 128  * 1024, // 128 Kbyte
+        3    => 256  * 1024, // 256 Kbyte
+        4    => 512  * 1024, // 512 Kbyte
+        5    => 1024 * 1024, // 1   Mbyte
+        6    => 2048 * 1024, // 2   Mbyte
+        0x52 => 1152 * 1024, // 1.1 Mbyte
+        0x53 => 1280 * 1024, // 1.2 Mbyte
+        0x54 => 1536 * 1024, // 1.5 Mbyte
+        _    => panic!("Unknown ROM size: {}", id)
     }
 }
 
