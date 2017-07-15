@@ -151,6 +151,7 @@ fn main() {
 
         // Update input
         let mut gb_buttons = Vec::new();
+        let mut fast_forward = false;
 
         for x in event_pump.keyboard_state().pressed_scancodes()
             .filter_map(Keycode::from_scancode) {
@@ -163,6 +164,10 @@ fn main() {
                 Keycode::Z     => GameboyButton::B,
                 Keycode::A     => GameboyButton::SELECT,
                 Keycode::S     => GameboyButton::START,
+                Keycode::Tab   => {
+                    fast_forward = true;
+                    continue
+                },
                 _              => continue
             };
             gb_buttons.push(result);
@@ -187,7 +192,7 @@ fn main() {
 
         let max_frame = Duration::from_millis(16);
         let elapsed = start_loop.elapsed();
-        if elapsed < max_frame {
+        if elapsed < max_frame && !fast_forward {
             let sleep_time = max_frame - elapsed;
 
             thread::sleep(sleep_time);
