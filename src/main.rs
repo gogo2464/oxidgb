@@ -112,6 +112,7 @@ fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let texture_creator = canvas.texture_creator();
 
+    // Build a texture with a proper RGB888 implementation
     let mask = PixelMasks {
         bpp : 8 * 3,
         rmask : 0x0000FF,
@@ -149,21 +150,20 @@ fn main() {
         }
 
         // Update input
-        let keys : Vec<sdl2::keyboard::Keycode> = event_pump.keyboard_state().pressed_scancodes()
-                                                    .filter_map(Keycode::from_scancode).collect();
         let mut gb_buttons = Vec::new();
 
-        for x in &keys {
+        for x in event_pump.keyboard_state().pressed_scancodes()
+            .filter_map(Keycode::from_scancode) {
             let result = match x {
-                &Keycode::Up    => GameboyButton::UP,
-                &Keycode::Down  => GameboyButton::DOWN,
-                &Keycode::Left  => GameboyButton::LEFT,
-                &Keycode::Right => GameboyButton::RIGHT,
-                &Keycode::X     => GameboyButton::A,
-                &Keycode::Z     => GameboyButton::B,
-                &Keycode::A     => GameboyButton::SELECT,
-                &Keycode::S     => GameboyButton::START,
-                _               => continue
+                Keycode::Up    => GameboyButton::UP,
+                Keycode::Down  => GameboyButton::DOWN,
+                Keycode::Left  => GameboyButton::LEFT,
+                Keycode::Right => GameboyButton::RIGHT,
+                Keycode::X     => GameboyButton::A,
+                Keycode::Z     => GameboyButton::B,
+                Keycode::A     => GameboyButton::SELECT,
+                Keycode::S     => GameboyButton::START,
+                _              => continue
             };
             gb_buttons.push(result);
         }
