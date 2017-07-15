@@ -3,7 +3,11 @@ extern crate sdl2;
 extern crate nfd;
 extern crate rustyline;
 
+#[macro_use]
+extern crate log;
+
 mod core;
+mod logging;
 mod debugger;
 
 use clap::App;
@@ -31,6 +35,7 @@ use core::gpu::PITCH;
 use debugger::CommandLineDebugger;
 
 fn main() {
+    // Parse arguments
     let app = App::new("Oxidgb")
         .about("A experimental Gameboy emulator")
         .version("v0.1")
@@ -43,13 +48,21 @@ fn main() {
         .arg(Arg::with_name("debug")
             .short("d")
             .long("debug")
-            .help("Enables debugging"));
+            .help("Enables debugging"))
+        .arg(Arg::with_name("verbose")
+            .short("v")
+            .long("verbose")
+            .help("Enables verbose logging"));
 
     let args = app.get_matches();
 
     let enable_debugging = args.is_present("debug");
+    let enable_verbose = args.is_present("verbose");
 
-    println!("Oxidgb v0.1");
+    // Set up logger
+    logging::setup_logging(enable_verbose).unwrap();
+
+    info!("Oxidgb v0.1");
 
     let file = match args.value_of("load") {
         Some(data) => data.to_string(),
@@ -58,7 +71,7 @@ fn main() {
             match nfd::open_file_dialog(Some("gb"), None).unwrap() {
                 Response::Okay(file_path) => file_path,
                 _ => {
-                    println!("No file selected.");
+                    error!("No file selected.");
                     exit(2);
                 },
             }
@@ -67,7 +80,7 @@ fn main() {
 
     let rom_path = Path::new(&file);
     if !rom_path.exists() {
-        println!("Specified file does not exist.");
+        error!("Specified file does not exist.");
         exit(2);
     }
 
@@ -82,8 +95,8 @@ fn main() {
     // Build CPU
     let mut cpu = CPU::build(memory);
 
-    println!("Opening ROM: {}", cpu.mem.rom.name);
-    println!("Mapper type: {:?}", cpu.mem.rom.cart_type);
+    info!("Opening ROM: {}", cpu.mem.rom.name);
+    debug!("Mapper type: {:?}", cpu.mem.rom.cart_type);
 
     // Build a window
     let sdl_context = sdl2::init().unwrap();

@@ -76,7 +76,7 @@ impl GameROM {
                     let target = ptr as usize + (self.current_bank as usize - 1)
                         * 0x4000;
                     if target >= self.backing_data.len() {
-                        println!("Out of range read for MBC1!");
+                        warn!("Out of range read for MBC1!");
                         0xFF
                     } else {
                         self.backing_data[target]
@@ -91,7 +91,7 @@ impl GameROM {
 
     pub fn read_ram(&self, ptr : u16) -> u8 {
         if self.ram_size == 0 {
-            println!("WARN: Reading from RAM on a ROM-only cartridge!");
+            warn!("Reading from RAM on a ROM-only cartridge!");
             return 0xFF;
         }
 
@@ -108,7 +108,7 @@ impl GameROM {
             CartridgeType::RomMbc1RamBatt => {
                 match ptr {
                     0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
-                        println!("STUB: ROM bank activation: {}", val > 0);
+                        debug!("STUB: ROM bank activation: {}", val > 0);
                     }
                     0x2000 ... 0x3FFF => { // Bank switching
                         self.current_bank = val & 0b11111;
@@ -117,10 +117,10 @@ impl GameROM {
                         }
                     }
                     0x6000 ... 0x7FFF => { // Memory models
-                        println!("WARN: MBC1 memory models are not supported!");
+                        warn!("MBC1 memory models are not supported!");
                     }
                     _ => {
-                        println!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
+                        warn!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
                                  ptr, val);
                     }
 
@@ -130,11 +130,11 @@ impl GameROM {
             CartridgeType::RomMbc2Batt => {
                 match ptr {
                     0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
-                        println!("STUB: ROM bank activation: {}", val > 0);
+                        debug!("STUB: ROM bank activation: {}", val > 0);
                     }
                     0x2000 ... 0x3FFF => { // Bank switching
                         if (ptr >> 8) & 0x1 != 1 {
-                            println!("MBC2: Invalid bank switch command!");
+                            warn!("MBC2: Invalid bank switch command!");
                         } else {
                             self.current_bank = val & 0b1111;
                             if self.current_bank < 1 {
@@ -143,10 +143,10 @@ impl GameROM {
                         }
                     }
                     0x6000 ... 0x7FFF => { // Memory models
-                        println!("WARN: MBC1 memory models are not supported!");
+                        warn!("MBC1 memory models are not supported!");
                     }
                     _ => {
-                        println!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
+                        warn!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
                                  ptr, val);
                     }
 
@@ -156,7 +156,7 @@ impl GameROM {
             CartridgeType::RomMbc3TimerRamBatt => {
                 match ptr {
                     0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
-                        println!("STUB: ROM bank activation: {}", val > 0);
+                        debug!("STUB: ROM bank activation: {}", val > 0);
                     }
                     0x2000 ... 0x3FFF => { // Bank switching
                         self.current_bank = val & 0b1111111;
@@ -165,10 +165,10 @@ impl GameROM {
                         }
                     }
                     0x6000 ... 0x7FFF => { // Memory models
-                        println!("WARN: MBC1 memory models are not supported!");
+                        warn!("MBC1 memory models are not supported!");
                     }
                     _ => {
-                        println!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
+                        warn!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
                                  ptr, val);
                     }
 
@@ -182,7 +182,7 @@ impl GameROM {
 
     pub fn write_ram(&mut self, ptr : u16, val : u8) {
         if self.ram_size == 0 {
-            println!("WARN: Writing to RAM on a ROM-only cartridge!");
+            warn!("Writing to RAM on a ROM-only cartridge!");
             return;
         }
 
@@ -214,7 +214,7 @@ impl GameROM {
         let rom_size = get_rom_size(data[0x148]);
 
         if rom_size != file_size {
-            println!("WARN: File size is not equal to what ROM declares!");
+            warn!("File size is not equal to what ROM declares!");
         }
 
         let name = String::from_utf8(data[0x134 .. 0x142].to_vec()).unwrap();
@@ -251,7 +251,7 @@ impl GameROM {
 
         let ram = vec![0xFF; ram_size];
 
-        println!("Allocated {} bytes of cart RAM", ram.len());
+        debug!("Allocated {} bytes of cart RAM", ram.len());
 
         return GameROM {
             backing_data : data,

@@ -4,6 +4,7 @@
  * Handles the I/O registers.
 **/
 
+use core::cpu::interrupts::InterruptType;
 use core::mem::GBMemory;
 use core::gpu::GPUMode;
 
@@ -159,11 +160,11 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
         0x4C ... 0xFF => {
-            println!("WARN: Out of range I/O register: {:02x}", ptr);
+            warn!("Out of range I/O register: {:02x}", ptr);
             0xFF
         },
         _ => {
-            println!("WARN: Unknown I/O register: {:02x}", ptr);
+            warn!("Unknown I/O register: {:02x}", ptr);
             0xFF
         }
     }
@@ -224,9 +225,8 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
                     mem.gpu.internal_clock = 0;
 
                     if (mem.gpu.stat >> 6) & 0x1 == 1 && mem.gpu.lyc == mem.gpu.current_line {
-                        //mem.ioregs.iflag |= 1 << (InterruptType::LCDC as u8);
-                        //mem.dirty_interrupts = true;
-                        println!("Should be interrupting right about... now.");
+                        mem.ioregs.iflag |= 1 << (InterruptType::LCDC as u8);
+                        mem.dirty_interrupts = true;
                     }
                     // TODO: Check STAT
                 }
@@ -248,10 +248,10 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
         0x4C ... 0xFF => {
-            println!("WARN: Out of range I/O register: {:02x} = {:02x}", ptr, val);
+            warn!("Out of range I/O register: {:02x} = {:02x}", ptr, val);
         },
         _ => {
-            println!("WARN: Unknown I/O register: {:02x} = {:02x}", ptr, val);
+            warn!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
     }
 }

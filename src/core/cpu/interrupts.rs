@@ -25,7 +25,7 @@ impl InterruptType {
             3 => Some(InterruptType::SERIAL),
             4 => Some(InterruptType::KEYPAD),
             _ => {
-                println!("WARN: Unknown interrupt type: {}", bit);
+                warn!("Unknown interrupt type: {}", bit);
                 None
             }
         }
