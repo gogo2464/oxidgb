@@ -159,7 +159,7 @@ impl GameROM {
                         println!("STUB: ROM bank activation: {}", val > 0);
                     }
                     0x2000 ... 0x3FFF => { // Bank switching
-                        self.current_bank = val & 0b11111;
+                        self.current_bank = val & 0b1111111;
                         if self.current_bank < 1 {
                             self.current_bank = 1;
                         }
