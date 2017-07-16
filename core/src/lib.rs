@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 pub mod rom;
 pub mod mem;
 pub mod cpu;

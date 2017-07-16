@@ -9,11 +9,11 @@ pub mod interrupts;
 
 mod instrs; // Private to the CPU implementation
 
-use core::mem::GBMemory;
+use mem::GBMemory;
 
-use core::cpu::regs::Registers;
-use core::cpu::instrs::execute_instruction;
-use core::cpu::interrupts::InterruptType;
+use cpu::regs::Registers;
+use cpu::instrs::execute_instruction;
+use cpu::interrupts::InterruptType;
 
 pub struct CPU {
     pub regs : Registers,

@@ -4,8 +4,8 @@
  * Operations to compare registers/memory against each other.
 **/
 
-use core::cpu::CPU;
-use core::cpu::regs::Registers;
+use cpu::CPU;
+use cpu::regs::Registers;
 
 /// Helper to compare registers
 #[inline]

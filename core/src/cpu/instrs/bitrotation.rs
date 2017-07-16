@@ -4,7 +4,7 @@
  * Operations to rotate bits.
 **/
 
-use core::cpu::CPU;
+use cpu::CPU;
 
 /// Helper for RL operations.
 #[inline]

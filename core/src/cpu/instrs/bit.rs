@@ -4,7 +4,7 @@
  * Operations to work on bits.
 **/
 
-use core::cpu::CPU;
+use cpu::CPU;
 
 /// **0xCB 0x40~0x7D** - *BIT (HL),b* - Test bit X in (hl)
 pub fn bit_phl(cpu : &mut CPU, digit : u8) -> u8 {

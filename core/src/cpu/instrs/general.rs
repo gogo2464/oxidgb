@@ -4,9 +4,9 @@
  * General arithmetic.
 **/
 
-use core::cpu::CPU;
+use cpu::CPU;
 
-use core::cpu::instrs::utils::*;
+use cpu::instrs::utils::*;
 
 /// **0x80 ~ 0xE8** - *ADD X* - Add X to a.
 macro_rules! add {

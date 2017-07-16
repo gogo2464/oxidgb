@@ -4,8 +4,8 @@
  * Instructions to store information into registers/memory.
 **/
 
-use core::cpu::CPU;
-use core::mem::GBMemory;
+use cpu::CPU;
+use mem::GBMemory;
 
 // 8 bit loads
 

@@ -4,8 +4,8 @@
  * Bitwise operations.
 **/
 
-use core::cpu::CPU;
-use core::cpu::regs::Registers;
+use cpu::CPU;
+use cpu::regs::Registers;
 
 /// Helper to XOR something into A.
 #[inline]

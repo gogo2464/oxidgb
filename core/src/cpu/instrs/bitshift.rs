@@ -4,7 +4,7 @@
  * Operations to shift bits.
 **/
 
-use core::cpu::CPU;
+use cpu::CPU;
 
 /// **0xCB 0x26** - *SLA (hl)* - Shift (hl) left into Carry. LSB of a set to 0.
 pub fn sla_phl(cpu : &mut CPU) -> u8 {

@@ -4,15 +4,15 @@
  * Handles the Gameboy's memory bus.
 **/
 
-use core::input::GameboyInput;
-use core::input::GameboyButton;
-use core::input::build_input;
+use input::GameboyInput;
+use input::GameboyButton;
+use input::build_input;
 
-use core::rom::GameROM;
-use core::gpu::GPU;
-use core::gpu::GPUMode;
-use core::io;
-use core::io::IORegisters;
+use rom::GameROM;
+use gpu::GPU;
+use gpu::GPUMode;
+use io;
+use io::IORegisters;
 
 pub struct GBMemory {
     pub rom : GameROM,

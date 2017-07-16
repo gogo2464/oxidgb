@@ -4,9 +4,9 @@
  * Handles the I/O registers.
 **/
 
-use core::cpu::interrupts::InterruptType;
-use core::mem::GBMemory;
-use core::gpu::GPUMode;
+use cpu::interrupts::InterruptType;
+use mem::GBMemory;
+use gpu::GPUMode;
 
 /// Storage for various I/O registers.
 pub struct IORegisters {

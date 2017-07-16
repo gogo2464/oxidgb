@@ -8,8 +8,8 @@
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 
-use core::cpu::CPU;
-use core::cpu::GameboyDebugger;
+use oxidgb_core::cpu::CPU;
+use oxidgb_core::cpu::GameboyDebugger;
 
 pub struct CommandLineDebugger {
     pub enabled : bool,

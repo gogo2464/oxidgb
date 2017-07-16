@@ -4,9 +4,9 @@
  * Instructions to store information into registers/memory.
 **/
 
-use core::cpu::CPU;
+use cpu::CPU;
 
-use core::cpu::instrs::utils::*;
+use cpu::instrs::utils::*;
 
 /// **0x01** - *LD bc,nnnn* - Put nnnn in bc
 pub fn ld_bc_nnnn(cpu : &mut CPU) -> u8 {

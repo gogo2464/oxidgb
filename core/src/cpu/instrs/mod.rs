@@ -21,21 +21,21 @@ mod comparsions;
 mod general;
 mod increments;
 
-use core::cpu::CPU;
+use cpu::CPU;
 
-use core::cpu::instrs::special::*;
-use core::cpu::instrs::jumps::*;
-use core::cpu::instrs::loads::*;
-use core::cpu::instrs::loads16::*;
+use cpu::instrs::special::*;
+use cpu::instrs::jumps::*;
+use cpu::instrs::loads::*;
+use cpu::instrs::loads16::*;
 
-use core::cpu::instrs::bit::*;
-use core::cpu::instrs::bitrotation::*;
-use core::cpu::instrs::bitshift::*;
-use core::cpu::instrs::bitswap::*;
-use core::cpu::instrs::bitwise::*;
-use core::cpu::instrs::comparsions::*;
-use core::cpu::instrs::general::*;
-use core::cpu::instrs::increments::*;
+use cpu::instrs::bit::*;
+use cpu::instrs::bitrotation::*;
+use cpu::instrs::bitshift::*;
+use cpu::instrs::bitswap::*;
+use cpu::instrs::bitwise::*;
+use cpu::instrs::comparsions::*;
+use cpu::instrs::general::*;
+use cpu::instrs::increments::*;
 
 #[inline]
 pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {

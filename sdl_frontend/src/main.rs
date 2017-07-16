@@ -6,7 +6,8 @@ extern crate rustyline;
 #[macro_use]
 extern crate log;
 
-mod core;
+extern crate oxidgb_core;
+
 mod logging;
 mod debugger;
 
@@ -26,11 +27,11 @@ use std::time::Duration;
 use std::path::Path;
 use std::process::exit;
 
-use core::input::GameboyButton;
-use core::rom::GameROM;
-use core::mem::GBMemory;
-use core::cpu::CPU;
-use core::gpu::PITCH;
+use oxidgb_core::input::GameboyButton;
+use oxidgb_core::rom::GameROM;
+use oxidgb_core::mem::GBMemory;
+use oxidgb_core::cpu::CPU;
+use oxidgb_core::gpu::PITCH;
 
 use debugger::CommandLineDebugger;
 

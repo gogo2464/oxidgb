@@ -4,9 +4,9 @@
  * Operations to branch code.
 **/
 
-use core::cpu::CPU;
+use cpu::CPU;
 
-use core::cpu::instrs::utils::*;
+use cpu::instrs::utils::*;
 
 /// **0x18** - *JR n* - Jump to pc+n
 pub fn jr_n(cpu : &mut CPU) -> u8 {

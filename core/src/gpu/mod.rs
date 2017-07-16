@@ -4,7 +4,7 @@
  * Renders graphics into a framebuffer
 **/
 
-use core::cpu::interrupts::InterruptType;
+use cpu::interrupts::InterruptType;
 
 pub const PITCH : usize = 3;
 
