@@ -16,7 +16,7 @@ Running
 Windows/Linux/macOS, assuming you have `cargo` on your PATH:
 
 ```bash
-cargo run
+cargo run --manifest-path sdl_frontend/Cargo.toml
 ```
 
 Credits
