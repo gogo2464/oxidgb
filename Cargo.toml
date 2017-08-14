@@ -1,2 +1,2 @@
 [workspace]
-members = ["core", "sdl_frontend"]
+members = ["core", "sdl_frontend", "glutin_frontend"]

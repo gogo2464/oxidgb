@@ -4,7 +4,7 @@
  * Handles input devices for the Gameboy.
 **/
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum GameboyButton {
     A, B,
     LEFT, RIGHT, UP, DOWN,

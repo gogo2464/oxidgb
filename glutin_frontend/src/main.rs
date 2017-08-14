@@ -1,0 +1,444 @@
+#![feature(vec_remove_item)]
+/**
+ * main.rs
+ *
+ * The main entry-point for the Glutin frontend
+**/
+
+extern crate gl;
+extern crate glutin;
+extern crate libc;
+
+extern crate clap;
+extern crate nfd;
+extern crate rustyline;
+
+#[macro_use]
+extern crate log;
+
+extern crate oxidgb_core;
+
+mod logging;
+mod debugger;
+
+use std::ffi::CStr;
+use std::ptr;
+use std::mem;
+
+use clap::App;
+use clap::Arg;
+
+/*use sdl2::event::Event;
+use sdl2::pixels;
+use sdl2::pixels::PixelFormatEnum;
+use sdl2::pixels::PixelMasks;
+use sdl2::keyboard::Keycode;*/
+
+use glutin::GlContext;
+
+use nfd::Response;
+
+use std::{thread, time};
+use std::time::Duration;
+use std::path::Path;
+use std::process::exit;
+
+use oxidgb_core::input::GameboyButton;
+use oxidgb_core::rom::GameROM;
+use oxidgb_core::mem::GBMemory;
+use oxidgb_core::cpu::CPU;
+use oxidgb_core::gpu::PITCH;
+
+use debugger::CommandLineDebugger;
+
+fn main() {
+    // Parse arguments
+    let app = App::new("Oxidgb")
+        .about("A experimental Gameboy emulator")
+        .version("v0.1")
+        .arg(Arg::with_name("load")
+            .short("l")
+            .long("load")
+            .value_name("FILE")
+            .help("Loads the specified ROM")
+            .takes_value(true))
+        .arg(Arg::with_name("debug")
+            .short("d")
+            .long("debug")
+            .help("Enables debugging"))
+        .arg(Arg::with_name("verbose")
+            .short("v")
+            .long("verbose")
+            .help("Enables verbose logging"));
+
+    let args = app.get_matches();
+
+    let enable_debugging = args.is_present("debug");
+    let enable_verbose = args.is_present("verbose");
+
+    // Set up logger
+    logging::setup_logging(enable_verbose).unwrap();
+
+    info!("Oxidgb v0.1");
+
+    let file = match args.value_of("load") {
+        Some(data) => data.to_string(),
+        None       => {
+            // Open a file dialog
+            match nfd::open_file_dialog(Some("gb"), None).unwrap() {
+                Response::Okay(file_path) => file_path,
+                _ => {
+                    error!("No file selected.");
+                    exit(2);
+                },
+            }
+        }
+    };
+
+    let rom_path = Path::new(&file);
+    if !rom_path.exists() {
+        error!("Specified file does not exist.");
+        exit(2);
+    }
+
+    // Load game ROM
+    let rom = GameROM::build(rom_path);
+
+    // Build memory
+    let memory = GBMemory::build(rom);
+
+    let mut debugger = CommandLineDebugger::build();
+
+    // Build CPU
+    let mut cpu = CPU::build(memory);
+
+    info!("Opening ROM: {}", cpu.mem.rom.name);
+    debug!("Mapper type: {:?}", cpu.mem.rom.cart_type);
+
+    let mut events_loop = glutin::EventsLoop::new();
+    let window = glutin::WindowBuilder::new()
+        .with_title("Oxidgb")
+        .with_dimensions(160 * 2, 144 * 2);
+    let context = glutin::ContextBuilder::new()
+        .with_vsync(false);
+    let gl_window = glutin::GlWindow::new(window,
+                                          context, &events_loop).unwrap();
+
+    unsafe {
+        gl_window.make_current().unwrap();
+    }
+
+    unsafe {
+        gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
+        gl::ClearColor(0.0, 0.0, 0.0, 1.0);
+    }
+
+    // Prepare OpenGL
+    let version = unsafe {
+        let data = CStr::from_ptr(gl::GetString(gl::VERSION) as *const _).to_bytes().to_vec();
+        String::from_utf8(data).unwrap()
+    };
+
+    info!("OpenGL version: {}", version);
+
+    let mut tex = unsafe { mem::uninitialized() };
+    let mut ebo = unsafe { mem::uninitialized() };
+
+    unsafe {
+        // Generate shaders
+        // Stolen from https://github.com/tomaka/glutin/blob/master/examples/support/mod.rs &
+        //             https://open.gl/content/code/c3_multitexture.txt
+        let vs = gl::CreateShader(gl::VERTEX_SHADER);
+        gl::ShaderSource(vs, 1, [VS_SRC.as_ptr() as *const _].as_ptr(), ptr::null());
+        gl::CompileShader(vs);
+
+        let fs = gl::CreateShader(gl::FRAGMENT_SHADER);
+        gl::ShaderSource(fs, 1, [FS_SRC.as_ptr() as *const _].as_ptr(), ptr::null());
+        gl::CompileShader(fs);
+
+        let program = gl::CreateProgram();
+        gl::AttachShader(program, vs);
+        gl::AttachShader(program, fs);
+        gl::BindFragDataLocation(program, 0, b"outColor\0".as_ptr() as *const _);
+        gl::LinkProgram(program);
+        gl::UseProgram(program);
+
+        gl::GenBuffers(1, &mut ebo);
+        gl::BindBuffer(gl::ARRAY_BUFFER, ebo);
+        gl::BufferData(gl::ARRAY_BUFFER,
+                       (ELEMENTS.len() * mem::size_of::<u32>()) as gl::types::GLsizeiptr,
+                       ELEMENTS.as_ptr() as *const _, gl::STATIC_DRAW);
+
+        let mut vb = mem::uninitialized();
+        gl::GenBuffers(1, &mut vb);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vb);
+        gl::BufferData(gl::ARRAY_BUFFER,
+                      (VERTEX_DATA.len() * mem::size_of::<f32>()) as gl::types::GLsizeiptr,
+                      VERTEX_DATA.as_ptr() as *const _, gl::STATIC_DRAW);
+
+        let mut vao = mem::uninitialized();
+        gl::GenVertexArrays(1, &mut vao);
+        gl::BindVertexArray(vao);
+
+        let pos_attrib = gl::GetAttribLocation(program, b"position\0".as_ptr() as *const _);
+        let color_attrib = gl::GetAttribLocation(program, b"color\0".as_ptr() as *const _);
+        let tex_attrib = gl::GetAttribLocation(program, b"texcoord\0".as_ptr() as *const _);
+        gl::VertexAttribPointer(pos_attrib as gl::types::GLuint, 2, gl::FLOAT, 0,
+                               7 * mem::size_of::<f32>() as gl::types::GLsizei,
+                               ptr::null());
+        gl::VertexAttribPointer(color_attrib as gl::types::GLuint, 3, gl::FLOAT, 0,
+                               7 * mem::size_of::<f32>() as gl::types::GLsizei,
+                               (2 * mem::size_of::<f32>()) as *const () as *const _);
+        gl::VertexAttribPointer(tex_attrib as gl::types::GLuint, 2, gl::FLOAT, 0,
+                                7 * mem::size_of::<f32>() as gl::types::GLsizei,
+                                (5 * mem::size_of::<f32>()) as *const () as *const _);
+        gl::EnableVertexAttribArray(pos_attrib as gl::types::GLuint);
+        gl::EnableVertexAttribArray(color_attrib as gl::types::GLuint);
+        gl::EnableVertexAttribArray(tex_attrib as gl::types::GLuint);
+
+        // Generate texture (for us to dump into)
+        gl::GenTextures(1, &mut tex);
+        gl::ActiveTexture(gl::TEXTURE0);
+        gl::BindTexture(gl::TEXTURE_2D, tex);
+
+        gl::Uniform1i(gl::GetUniformLocation(program, b"tex\0".as_ptr() as *const _), 0);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as gl::types::GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as gl::types::GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as gl::types::GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as gl::types::GLint);
+    }
+
+    let mut running = true;
+
+    // Update input
+    let mut gb_buttons = Vec::new();
+    let mut fast_forward = false;
+
+    while running {
+        events_loop.poll_events(|event| {
+            match event {
+                glutin::Event::WindowEvent{ event, .. } => match event {
+                    glutin::WindowEvent::Closed => running = false,
+                    glutin::WindowEvent::Resized(w, h) => gl_window.resize(w, h),
+                    glutin::WindowEvent::KeyboardInput { input, .. } => {
+                        match input.virtual_keycode {
+                            Some(key) => {
+                                let key = match key {
+                                    glutin::VirtualKeyCode::Up => GameboyButton::UP,
+                                    glutin::VirtualKeyCode::Down => GameboyButton::DOWN,
+                                    glutin::VirtualKeyCode::Left => GameboyButton::LEFT,
+                                    glutin::VirtualKeyCode::Right => GameboyButton::RIGHT,
+                                    glutin::VirtualKeyCode::X => GameboyButton::A,
+                                    glutin::VirtualKeyCode::Z => GameboyButton::B,
+                                    glutin::VirtualKeyCode::A => GameboyButton::SELECT,
+                                    glutin::VirtualKeyCode::S => GameboyButton::START,
+                                    glutin::VirtualKeyCode::Tab => {
+                                        fast_forward = true;
+                                        return;
+                                    },
+                                    _ => {
+                                        return;
+                                    }
+                                };
+
+                                match input.state {
+                                    glutin::ElementState::Pressed => {
+                                        if !gb_buttons.contains(&key) {
+                                            println!("Push: {:?}", key);
+                                            gb_buttons.push(key);
+                                        }
+                                    },
+                                    glutin::ElementState::Released => {
+                                        println!("Release: {:?}", key);
+                                        gb_buttons.remove_item(&key);
+                                    },
+                                    _ => {
+                                        println!("Unknown event: {:?}", input.state);
+                                    }
+                                }
+                            },
+                            None => {}
+                        }
+                    },
+                    _ => ()
+                },
+
+                _ => ()
+            }
+        });
+
+        cpu.mem.set_input(&gb_buttons);
+
+        if enable_debugging {
+            cpu.run(&mut Some(&mut debugger));
+        } else {
+            cpu.run(&mut None);
+        }
+
+        if cpu.mem.gpu.is_enabled() {
+            unsafe {
+                gl::Clear(gl::COLOR_BUFFER_BIT);
+
+                gl::ActiveTexture(gl::TEXTURE0);
+                gl::BindTexture(gl::TEXTURE_2D, tex);
+                gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB as gl::types::GLint, 160, 144, 0,
+                               gl::RGB, gl::UNSIGNED_BYTE,
+                               cpu.mem.gpu.pixel_data.as_ptr() as *const _);
+
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+                gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT,
+                                 (0 * mem::size_of::<f32>()) as *const () as *const _);
+            }
+        }
+
+        gl_window.swap_buffers().unwrap();
+    }
+
+    // Build a window
+    /*let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
+
+    let window = video_subsystem.window("Oxidgb", 160 * 2, 144 * 2)
+        .position_centered()
+        .opengl()
+        .resizable()
+        .build()
+        .unwrap();
+
+    let mut canvas = window.into_canvas(.build().unwrap();
+    let texture_creator = canvas.texture_creator();
+
+    // Build a texture with a proper RGB888 implementation
+    let mask = PixelMasks {
+        bpp : 8 * 3,
+        rmask : 0x0000FF,
+        gmask : 0x00FF00,
+        bmask : 0xFF0000,
+        amask : 0
+    };
+
+    let mut texture = texture_creator.create_texture_streaming(
+        PixelFormatEnum::from_masks(mask), 160, 144).unwrap();
+
+    canvas.set_draw_color(pixels::Color::RGB(cpu.mem.gpu.palette[0],
+                                             cpu.mem.gpu.palette[1],
+                                             cpu.mem.gpu.palette[2]));
+    canvas.clear();
+    canvas.present();
+
+    let mut event_pump = sdl_context.event_pump().unwrap();
+
+    'running: loop {
+        let start_loop = time::Instant::now();
+
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit {..}
+                | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                    break 'running
+                },
+                _ => {}
+            }
+        }
+
+        if debugger.shutdown {
+            break 'running;
+        }
+
+        // Update input
+        let mut gb_buttons = Vec::new();
+        let mut fast_forward = false;
+
+        for x in event_pump.keyboard_state().pressed_scancodes()
+            .filter_map(Keycode::from_scancode) {
+            let result = match x {
+                Keycode::Up    => GameboyButton::UP,
+                Keycode::Down  => GameboyButton::DOWN,
+                Keycode::Left  => GameboyButton::LEFT,
+                Keycode::Right => GameboyButton::RIGHT,
+                Keycode::X     => GameboyButton::A,
+                Keycode::Z     => GameboyButton::B,
+                Keycode::A     => GameboyButton::SELECT,
+                Keycode::S     => GameboyButton::START,
+                Keycode::Tab   => {
+                    fast_forward = true;
+                    continue
+                },
+                _              => continue
+            };
+            gb_buttons.push(result);
+        }
+
+        cpu.mem.set_input(&gb_buttons);
+
+        if enable_debugging {
+            cpu.run(&mut Some(&mut debugger));
+        } else {
+            cpu.run(&mut None);
+        }
+
+        if cpu.mem.gpu.is_enabled() {
+            texture.update(None, &cpu.mem.gpu.pixel_data, 160 * PITCH).unwrap();
+
+            canvas.clear();
+            canvas.copy(&texture, None, None).unwrap();
+        }
+
+        canvas.present();
+
+        let max_frame = Duration::from_millis(16);
+        let elapsed = start_loop.elapsed();
+        if elapsed < max_frame && !fast_forward {
+            let sleep_time = max_frame - elapsed;
+
+            thread::sleep(sleep_time);
+        }
+    }*/
+}
+
+static VERTEX_DATA: [f32; 28] = [
+    //  Position      Color             Texcoords
+    -1.0,  1.0, 1.0, 1.0, 1.0, 0.0, 0.0, // Top-let
+     1.0,  1.0, 1.0, 1.0, 1.0, 1.0, 0.0, // Top-right
+     1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, // Bottom-right
+    -1.0, -1.0, 1.0, 1.0, 1.0, 0.0, 1.0  // Bottom-let
+];
+
+static ELEMENTS: [u32; 6] = [
+    0, 1, 2,
+    2, 3, 0
+];
+
+const VS_SRC: &'static [u8] = b"
+    #version 150 core
+
+    in vec2 position;
+    in vec3 color;
+    in vec2 texcoord;
+
+    out vec3 Color;
+    out vec2 Texcoord;
+
+    void main()
+    {
+        Color = color;
+        Texcoord = texcoord;
+        gl_Position = vec4(position, 0.0, 1.0);
+    }
+\0";
+
+const FS_SRC: &'static [u8] = b"
+    #version 150 core
+
+    in vec3 Color;
+    in vec2 Texcoord;
+
+    out vec4 outColor;
+
+    uniform sampler2D tex;
+
+    void main()
+    {
+        outColor = texture(tex, Texcoord) * vec4(Color, 1.0);
+    }
+\0";
