@@ -1,3 +1,9 @@
+/**
+ * main.rs
+ *
+ * The main entry-point for the SDL frontend
+**/
+
 extern crate clap;
 extern crate sdl2;
 extern crate nfd;
