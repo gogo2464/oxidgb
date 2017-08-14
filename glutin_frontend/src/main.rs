@@ -47,7 +47,6 @@ use oxidgb_core::input::GameboyButton;
 use oxidgb_core::rom::GameROM;
 use oxidgb_core::mem::GBMemory;
 use oxidgb_core::cpu::CPU;
-use oxidgb_core::gpu::PITCH;
 
 use debugger::CommandLineDebugger;
 
@@ -120,15 +119,12 @@ fn main() {
         .with_title("Oxidgb")
         .with_dimensions(160 * 2, 144 * 2);
     let context = glutin::ContextBuilder::new()
-        .with_vsync(false);
+        .with_vsync(true);
     let gl_window = glutin::GlWindow::new(window,
                                           context, &events_loop).unwrap();
 
     unsafe {
         gl_window.make_current().unwrap();
-    }
-
-    unsafe {
         gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
         gl::ClearColor(0.0, 0.0, 0.0, 1.0);
     }
@@ -214,7 +210,11 @@ fn main() {
     let mut gb_buttons = Vec::new();
     let mut fast_forward = false;
 
+    let mut last_synced = time::Instant::now();
+
     while running {
+        let start_loop = time::Instant::now();
+
         events_loop.poll_events(|event| {
             match event {
                 glutin::Event::WindowEvent{ event, .. } => match event {
@@ -233,7 +233,14 @@ fn main() {
                                     glutin::VirtualKeyCode::A => GameboyButton::SELECT,
                                     glutin::VirtualKeyCode::S => GameboyButton::START,
                                     glutin::VirtualKeyCode::Tab => {
-                                        fast_forward = true;
+                                        match input.state {
+                                            glutin::ElementState::Pressed => {
+                                                fast_forward = true;
+                                            },
+                                            _ => {
+                                                fast_forward = false;
+                                            }
+                                        }
                                         return;
                                     },
                                     _ => {
@@ -244,16 +251,11 @@ fn main() {
                                 match input.state {
                                     glutin::ElementState::Pressed => {
                                         if !gb_buttons.contains(&key) {
-                                            println!("Push: {:?}", key);
                                             gb_buttons.push(key);
                                         }
                                     },
                                     glutin::ElementState::Released => {
-                                        println!("Release: {:?}", key);
                                         gb_buttons.remove_item(&key);
-                                    },
-                                    _ => {
-                                        println!("Unknown event: {:?}", input.state);
                                     }
                                 }
                             },
@@ -275,125 +277,36 @@ fn main() {
             cpu.run(&mut None);
         }
 
-        if cpu.mem.gpu.is_enabled() {
-            unsafe {
-                gl::Clear(gl::COLOR_BUFFER_BIT);
-
-                gl::ActiveTexture(gl::TEXTURE0);
-                gl::BindTexture(gl::TEXTURE_2D, tex);
-                gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB as gl::types::GLint, 160, 144, 0,
-                               gl::RGB, gl::UNSIGNED_BYTE,
-                               cpu.mem.gpu.pixel_data.as_ptr() as *const _);
-
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-                gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT,
-                                 (0 * mem::size_of::<f32>()) as *const () as *const _);
-            }
-        }
-
-        gl_window.swap_buffers().unwrap();
-    }
-
-    // Build a window
-    /*let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
-
-    let window = video_subsystem.window("Oxidgb", 160 * 2, 144 * 2)
-        .position_centered()
-        .opengl()
-        .resizable()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas(.build().unwrap();
-    let texture_creator = canvas.texture_creator();
-
-    // Build a texture with a proper RGB888 implementation
-    let mask = PixelMasks {
-        bpp : 8 * 3,
-        rmask : 0x0000FF,
-        gmask : 0x00FF00,
-        bmask : 0xFF0000,
-        amask : 0
-    };
-
-    let mut texture = texture_creator.create_texture_streaming(
-        PixelFormatEnum::from_masks(mask), 160, 144).unwrap();
-
-    canvas.set_draw_color(pixels::Color::RGB(cpu.mem.gpu.palette[0],
-                                             cpu.mem.gpu.palette[1],
-                                             cpu.mem.gpu.palette[2]));
-    canvas.clear();
-    canvas.present();
-
-    let mut event_pump = sdl_context.event_pump().unwrap();
-
-    'running: loop {
-        let start_loop = time::Instant::now();
-
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..}
-                | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },
-                _ => {}
-            }
-        }
-
-        if debugger.shutdown {
-            break 'running;
-        }
-
-        // Update input
-        let mut gb_buttons = Vec::new();
-        let mut fast_forward = false;
-
-        for x in event_pump.keyboard_state().pressed_scancodes()
-            .filter_map(Keycode::from_scancode) {
-            let result = match x {
-                Keycode::Up    => GameboyButton::UP,
-                Keycode::Down  => GameboyButton::DOWN,
-                Keycode::Left  => GameboyButton::LEFT,
-                Keycode::Right => GameboyButton::RIGHT,
-                Keycode::X     => GameboyButton::A,
-                Keycode::Z     => GameboyButton::B,
-                Keycode::A     => GameboyButton::SELECT,
-                Keycode::S     => GameboyButton::START,
-                Keycode::Tab   => {
-                    fast_forward = true;
-                    continue
-                },
-                _              => continue
-            };
-            gb_buttons.push(result);
-        }
-
-        cpu.mem.set_input(&gb_buttons);
-
-        if enable_debugging {
-            cpu.run(&mut Some(&mut debugger));
-        } else {
-            cpu.run(&mut None);
-        }
-
-        if cpu.mem.gpu.is_enabled() {
-            texture.update(None, &cpu.mem.gpu.pixel_data, 160 * PITCH).unwrap();
-
-            canvas.clear();
-            canvas.copy(&texture, None, None).unwrap();
-        }
-
-        canvas.present();
-
         let max_frame = Duration::from_millis(16);
+
+        if !fast_forward || last_synced.elapsed() > max_frame {
+            if cpu.mem.gpu.is_enabled() {
+                unsafe {
+                    gl::Clear(gl::COLOR_BUFFER_BIT);
+
+                    gl::ActiveTexture(gl::TEXTURE0);
+                    gl::BindTexture(gl::TEXTURE_2D, tex);
+                    gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB as gl::types::GLint, 160, 144, 0,
+                                   gl::RGB, gl::UNSIGNED_BYTE,
+                                   cpu.mem.gpu.pixel_data.as_ptr() as *const _);
+
+                    gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
+                    gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT,
+                                     (0 * mem::size_of::<f32>()) as *const () as *const _);
+                }
+            }
+
+            gl_window.swap_buffers().unwrap();
+            last_synced = time::Instant::now();
+        }
+
         let elapsed = start_loop.elapsed();
         if elapsed < max_frame && !fast_forward {
             let sleep_time = max_frame - elapsed;
 
             thread::sleep(sleep_time);
         }
-    }*/
+    }
 }
 
 static VERTEX_DATA: [f32; 28] = [
