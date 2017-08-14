@@ -48,7 +48,7 @@ pipeline {
               cargo build --release
               
               mkdir build
-              cp target/release/oxidgb_sdl build/
+              cp target/release/oxidgb_glutin build/
               
               cd build
               
@@ -64,8 +64,7 @@ pipeline {
               cargo build --release
               
               mkdir build
-              copy /Y target\\release\\oxidgb_sdl.exe build\\
-              copy /Y C:\\Libraries\\SDL\\SDL2.dll build\\
+              copy /Y target\\release\\oxidgb_glutin.exe build\\
               
               cd build
               
