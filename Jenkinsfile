@@ -46,6 +46,8 @@ pipeline {
             node ("linux") {
               sh '''
               cargo build --release
+
+              strip target/release/oxidgb_glutin
               
               mkdir build
               cp target/release/oxidgb_glutin build/
