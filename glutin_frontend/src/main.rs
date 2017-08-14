@@ -309,12 +309,13 @@ fn main() {
     }
 }
 
+// OpenGL resources
 static VERTEX_DATA: [f32; 28] = [
-    //  Position      Color             Texcoords
-    -1.0,  1.0, 1.0, 1.0, 1.0, 0.0, 0.0, // Top-let
+    // X    Y    R    G    B    U    V
+    -1.0,  1.0, 1.0, 1.0, 1.0, 0.0, 0.0, // Top-left
      1.0,  1.0, 1.0, 1.0, 1.0, 1.0, 0.0, // Top-right
      1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, // Bottom-right
-    -1.0, -1.0, 1.0, 1.0, 1.0, 0.0, 1.0  // Bottom-let
+    -1.0, -1.0, 1.0, 1.0, 1.0, 0.0, 1.0  // Bottom-left
 ];
 
 static ELEMENTS: [u32; 6] = [
