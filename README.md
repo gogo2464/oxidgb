@@ -1,6 +1,8 @@
 Oxidgb
 ======
 
+[![Build Status](https://ci.jselby.net/job/Oxidgb/job/master/badge/icon)](https://ci.jselby.net/job/Oxidgb/job/master/)
+
 Yet another work-in-progress Gameboy emulator for Rust.
 
 Features
@@ -16,7 +18,7 @@ Running
 Windows/Linux/macOS, assuming you have `cargo` on your PATH:
 
 ```bash
-cargo run --manifest-path sdl_frontend/Cargo.toml
+cargo run --manifest-path glutin_frontend/Cargo.toml
 ```
 
 Credits
