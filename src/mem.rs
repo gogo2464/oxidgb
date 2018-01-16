@@ -4,6 +4,8 @@
  * Handles the Gameboy's memory bus.
 **/
 
+use alloc::Vec;
+
 use input::GameboyInput;
 use input::GameboyButton;
 use input::build_input;
@@ -14,9 +16,9 @@ use gpu::GPUMode;
 use io;
 use io::IORegisters;
 
-pub struct GBMemory {
-    pub rom : GameROM,
-    pub ram : [u8; 8192],
+pub struct GBMemory<'a> {
+    pub rom : GameROM<'a>,
+    pub ram : Vec<u8>,
     pub high_ram : [u8; 127 /* - interrupt enable reg */],
     pub gpu : GPU,
 
@@ -27,7 +29,7 @@ pub struct GBMemory {
     pub buttons : GameboyInput,
 }
 
-impl GBMemory {
+impl<'a> GBMemory<'a> {
     /// Reads a value from memory. 0xFF if invalid.
     pub fn read(&self, ptr : u16) -> u8 {
         let result = match ptr {
@@ -160,10 +162,10 @@ impl GBMemory {
     }
 
     /// Builds a new memory manager.
-    pub fn build(rom : GameROM) -> GBMemory {
+    pub fn build(rom : GameROM<'a>) -> GBMemory<'a> {
         return GBMemory {
             rom : rom,
-            ram : [0; 8192],
+            ram : vec!(0 as u8; 8192),
             high_ram : [0; 127],
             gpu : GPU::build(),
 

@@ -4,8 +4,6 @@
  * Contains types for interrupts.
 **/
 
-use std::option::Option;
-
 #[derive(PartialEq, Debug, Clone, Copy)]
 #[allow(dead_code)] // For debug messages
 pub enum InterruptType {
@@ -25,7 +23,7 @@ impl InterruptType {
             3 => Some(InterruptType::SERIAL),
             4 => Some(InterruptType::KEYPAD),
             _ => {
-                warn!("Unknown interrupt type: {}", bit);
+                //warn!("Unknown interrupt type: {}", bit);
                 None
             }
         }

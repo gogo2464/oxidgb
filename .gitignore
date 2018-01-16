@@ -1,5 +1,8 @@
 # Additional resources
 *.gb
+*.so
+*.nro
+*.nso
 doc/
 
 # Created by https://www.gitignore.io/api/rust,intellij+all

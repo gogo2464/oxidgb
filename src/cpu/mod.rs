@@ -15,9 +15,9 @@ use cpu::regs::Registers;
 use cpu::instrs::execute_instruction;
 use cpu::interrupts::InterruptType;
 
-pub struct CPU {
+pub struct CPU<'a> {
     pub regs : Registers,
-    pub mem : GBMemory,
+    pub mem : GBMemory<'a>,
     pub interrupts_enabled : bool,
     pub interrupts_countdown : i8,
     pub stopped : bool,
@@ -32,7 +32,7 @@ pub struct CPU {
     pub timer_invoke_counter : u32
 }
 
-impl CPU {
+impl<'a> CPU<'a> {
     /// Ticks the CPU + other components one instruction.
     pub fn tick(&mut self, debugger : &mut Option<&mut GameboyDebugger>) -> bool {
         // Before tick

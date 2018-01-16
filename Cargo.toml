@@ -1,2 +1,7 @@
-[workspace]
-members = ["core", "glutin_frontend"]
+[package]
+name = "oxidgb_switch"
+version = "0.1.0"
+authors = ["James <jselby@jselby.net>"]
+
+[lib]
+crate-type = ["staticlib"]

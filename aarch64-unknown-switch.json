@@ -1,0 +1,19 @@
+{
+    "llvm-target": "aarch64-unknown-switch",
+    "data-layout": "e-m:e-i8:8:32-i16:16:32-i64:64-i128:128-n32:64-S128",
+    "target-endian": "little",
+    "target-c-int-width": "32",
+    "target-pointer-width": "64",
+    "arch": "aarch64",
+    "target-family": "unix",
+    "os": "linux",
+    "env": "newlib",
+	"cpu": "cortex-a53",
+    "pre-link-args": ["-Wl,-fstack-protector-strong"],
+	"linker-is-gnu": true,
+	"no-default-libraries": true,
+	"position-independent-executables": true,
+    "panic-strategy": "abort",
+    "linker-flavor": "ld",
+    "linker": "lld"
+}

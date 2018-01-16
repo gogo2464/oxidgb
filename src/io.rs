@@ -160,11 +160,11 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
         0x4C ... 0xFF => {
-            warn!("Out of range I/O register: {:02x}", ptr);
+            //warn!("Out of range I/O register: {:02x}", ptr);
             0xFF
         },
         _ => {
-            warn!("Unknown I/O register: {:02x}", ptr);
+            //warn!("Unknown I/O register: {:02x}", ptr);
             0xFF
         }
     }
@@ -248,10 +248,10 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
         0x4C ... 0xFF => {
-            warn!("Out of range I/O register: {:02x} = {:02x}", ptr, val);
+            //warn!("Out of range I/O register: {:02x} = {:02x}", ptr, val);
         },
         _ => {
-            warn!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
+            //warn!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
     }
 }

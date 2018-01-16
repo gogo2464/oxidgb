@@ -6,6 +6,8 @@
 
 use cpu::interrupts::InterruptType;
 
+use alloc::Vec;
+
 pub const PITCH : usize = 3;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -18,12 +20,12 @@ pub enum GPUMode {
 }
 
 pub struct GPU {
-    pub pixel_data : [u8; 160 * 144 * PITCH],
+    pub pixel_data : Vec<u8>,
     pub mode : GPUMode,
     pub palette : [u8; 4 * 3],
 
-    pub vram : [u8; 8192],
-    pub oam : [u8; 160],
+    pub vram : Vec<u8>,
+    pub oam : Vec<u8>,
 
     pub lcdc : u8,
     pub stat : u8,
@@ -379,12 +381,12 @@ impl GPU {
     /// Builds a new instance of the GPU
     pub fn build() -> GPU {
         return GPU {
-            pixel_data : [0xFF; 160 * 144 * PITCH],
+            pixel_data : vec![0xFF; 160 * 144 * PITCH],
             mode : GPUMode::Vblank,
             palette : [224,248,208, 136,192,112, 52,104,86, 8,24,32], // BGB palette
 
-            vram : [0; 8192],
-            oam : [0; 160],
+            vram : vec![0; 8192],
+            oam : vec![0; 160],
 
             lcdc: 0x91,
             stat: 0x81, // TODO: verify
