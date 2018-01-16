@@ -230,12 +230,12 @@ pub fn main() {
 
     println!("Emulator ready");
 
+    let mut buf = vec!(0 as u8; 160 * 144 * 4);
 
     loop {
         println!("Starting emulation for 1 frame...");
 
         cpu.run(&mut None);
-        let mut buf = vec!(0 as u8; 160 * 144 * 4);
         println!("Converting buffer...");
 
         // libtransistor expects rgba, we render using a rgb buffer. convert.
