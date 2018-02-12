@@ -1,2 +1,2 @@
 [workspace]
-members = ["core", "glutin_frontend"]
+members = ["core", "glutin_frontend", "libretro_frontend"]

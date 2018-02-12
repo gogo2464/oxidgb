@@ -1,0 +1,18 @@
+[package]
+name = "oxidgb_libretro"
+version = "0.1.0"
+authors = ["James <jselby@jselby.net>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+libretro-backend = "0.2"
+
+# Logging implementation
+fern = "0.4.0"
+chrono = "0.4.0"
+log = "0.3.8"
+
+[dependencies.oxidgb_core]
+path = "../core"

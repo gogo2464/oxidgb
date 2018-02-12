@@ -8,3 +8,10 @@ name = "oxidgb_core"
 
 [dependencies]
 log = "0.3.8"
+
+serde = {version = "*", optional = true}
+serde_derive = {version = "*", optional = true}
+bincode = {version = "0.9.2", optional = true}
+
+[features]
+serialize = ["serde", "serde_derive", "bincode"]

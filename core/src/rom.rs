@@ -190,6 +190,12 @@ impl GameROM {
     ///
     /// * `data` - The data to build a ROM from.
     pub fn build(data : Vec<u8>) -> GameROM {
+        let rom_size = get_rom_size(data[0x148]);
+
+        if rom_size != data.len() {
+            warn!("File size is not equal to what ROM declares!");
+        }
+
         let name = String::from_utf8(data[0x134 .. 0x142].to_vec()).unwrap();
         let cart_type = match data[0x0147] {
             0x00 => CartridgeType::RomOnly,
