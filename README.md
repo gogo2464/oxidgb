@@ -1,7 +1,7 @@
 Oxidgb
 ======
 
-[![Build Status](https://ci.jselby.net/job/oxidgb/job/master/badge/icon)](https://ci.jselby.net/job/oxidgb/job/master/)
+[![Build Status](https://ci.jselby.net/job/Oxidgb/badge/icon)](https://ci.jselby.net/job/Oxidgb/)
 
 Yet another work-in-progress Gameboy emulator for Rust.
 
