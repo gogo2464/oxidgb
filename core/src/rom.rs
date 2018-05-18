@@ -4,12 +4,8 @@
  * Loads and parses .gb cartridges, and provides a interface for mappers.
 **/
 
-use std::error::Error;
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-use std::string::String;
+use alloc::String;
+use alloc::Vec;
 
 /// The different kinds of cartridges that can be handled. Each has a
 ///  specific way of managing memory/providing additional capabilities.
@@ -192,31 +188,8 @@ impl GameROM {
     /// Builds a new ROM from the specified file. Expects
     ///  a correctly formatted file.
     ///
-    /// * `path` - The path to load from. Must be readable.
-    pub fn build(path : &Path) -> GameROM {
-        let file_size = match fs::metadata(path) {
-            Err(why) => panic!("couldn't read metadata of {}: {}", path.display(),
-                                why.description()),
-            Ok(meta) => meta.len()
-        } as usize;
-
-        let mut data = Vec::with_capacity(file_size);
-
-        let mut file = match File::open(&path) {
-            Err(why) => panic!("couldn't open {}: {}", path.display(),
-                               why.description()),
-            Ok(file) => file,
-        };
-
-        let read = file.read_to_end(&mut data).unwrap();
-
-        assert_eq!(read, file_size);
-        let rom_size = get_rom_size(data[0x148]);
-
-        if rom_size != file_size {
-            warn!("File size is not equal to what ROM declares!");
-        }
-
+    /// * `data` - The data to build a ROM from.
+    pub fn build(data : Vec<u8>) -> GameROM {
         let name = String::from_utf8(data[0x134 .. 0x142].to_vec()).unwrap();
         let cart_type = match data[0x0147] {
             0x00 => CartridgeType::RomOnly,
@@ -255,18 +228,18 @@ impl GameROM {
 
         return GameROM {
             backing_data : data,
-            name : name,
-            cart_type : cart_type,
+            name,
+            cart_type,
             current_bank : 1,
 
             cart_ram : ram,
-            ram_size : ram_size
+            ram_size
         };
     }
 }
 
 /// Returns a ROM size for a particular ROM id.
-fn get_rom_size(id : u8) -> usize {
+pub fn get_rom_size(id : u8) -> usize {
     return match id {
         0    => 32   * 1024, // 32  Kbyte
         1    => 64   * 1024, // 64  Kbyte
@@ -283,7 +256,7 @@ fn get_rom_size(id : u8) -> usize {
 }
 
 /// Returns a RAM size for a particular RAM id.
-fn get_ram_size(id : u8) -> usize {
+pub fn get_ram_size(id : u8) -> usize {
     return match id {
         0 => 0,          // ROM only
         1 => 2   * 1024, // 2  Kbyte

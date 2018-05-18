@@ -40,12 +40,17 @@ use glutin::GlContext;
 use nfd::Response;
 
 use std::{thread, time};
+use std::error::Error;
+use std::fs::File;
+use std::fs;
+use std::io::Read;
 use std::time::Duration;
 use std::path::Path;
 use std::process::exit;
 
 use oxidgb_core::input::GameboyButton;
 use oxidgb_core::rom::GameROM;
+use oxidgb_core::rom::get_rom_size;
 use oxidgb_core::mem::GBMemory;
 use oxidgb_core::cpu::CPU;
 
@@ -106,7 +111,31 @@ fn main() {
     }
 
     // Load game ROM
-    let rom = GameROM::build(rom_path);
+
+    let file_size = match fs::metadata(rom_path) {
+        Err(why) => panic!("couldn't read metadata of {}: {}", rom_path.display(),
+                           why.description()),
+        Ok(meta) => meta.len()
+    } as usize;
+
+    let mut data = Vec::with_capacity(file_size);
+
+    let mut file = match File::open(&rom_path) {
+        Err(why) => panic!("couldn't open {}: {}", rom_path.display(),
+                           why.description()),
+        Ok(file) => file,
+    };
+
+    let read = file.read_to_end(&mut data).unwrap();
+
+    assert_eq!(read, file_size);
+    let rom_size = get_rom_size(data[0x148]);
+
+    if rom_size != file_size {
+        warn!("File size is not equal to what ROM declares!");
+    }
+
+    let rom = GameROM::build(data);
 
     // Build memory
     let memory = GBMemory::build(rom);
@@ -230,7 +259,7 @@ fn main() {
         events_loop.poll_events(|event| {
             match event {
                 glutin::Event::WindowEvent{ event, .. } => match event {
-                    glutin::WindowEvent::Destroyed => running = false,
+                    glutin::WindowEvent::CloseRequested => running = false,
                     glutin::WindowEvent::Resized(w, h) => gl_window.resize(w, h),
                     glutin::WindowEvent::KeyboardInput { input, .. } => {
                         match input.virtual_keycode {

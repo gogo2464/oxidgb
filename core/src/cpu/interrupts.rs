@@ -4,8 +4,6 @@
  * Contains types for interrupts.
 **/
 
-use std::option::Option;
-
 #[derive(PartialEq, Debug, Clone, Copy)]
 #[allow(dead_code)] // For debug messages
 pub enum InterruptType {
