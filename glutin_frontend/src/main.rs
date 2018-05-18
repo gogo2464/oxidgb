@@ -1,4 +1,3 @@
-#![feature(vec_remove_item)]
 /**
  * main.rs
  *
@@ -17,6 +16,8 @@ extern crate rustyline;
 extern crate log;
 
 extern crate oxidgb_core;
+
+extern crate rodio;
 
 mod logging;
 mod debugger;
@@ -49,6 +50,10 @@ use oxidgb_core::mem::GBMemory;
 use oxidgb_core::cpu::CPU;
 
 use debugger::CommandLineDebugger;
+
+use rodio::Sink;
+use rodio::queue::queue;
+use rodio::buffer::SamplesBuffer;
 
 fn main() {
     // Parse arguments
@@ -204,6 +209,13 @@ fn main() {
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as gl::types::GLint);
     }
 
+    // Init audio
+    let device = rodio::default_output_device().unwrap();
+    let sink = Sink::new(&device);
+    let (audio_input, audio_output) = queue(true);
+    sink.append(audio_output);
+    sink.play();
+
     let mut running = true;
 
     // Update input
@@ -218,7 +230,7 @@ fn main() {
         events_loop.poll_events(|event| {
             match event {
                 glutin::Event::WindowEvent{ event, .. } => match event {
-                    glutin::WindowEvent::Closed => running = false,
+                    glutin::WindowEvent::Destroyed => running = false,
                     glutin::WindowEvent::Resized(w, h) => gl_window.resize(w, h),
                     glutin::WindowEvent::KeyboardInput { input, .. } => {
                         match input.virtual_keycode {
@@ -255,7 +267,12 @@ fn main() {
                                         }
                                     },
                                     glutin::ElementState::Released => {
-                                        gb_buttons.remove_item(&key);
+                                        match gb_buttons.iter().position(|x| *x == key) {
+                                            Some(pos) => {
+                                                gb_buttons.remove(pos);
+                                            },
+                                            None => {}
+                                        }
                                     }
                                 }
                             },
@@ -306,6 +323,13 @@ fn main() {
 
             thread::sleep(sleep_time);
         }
+
+        // Handle audio
+        let (samples, sample_count) = cpu.mem.sound.take_samples();
+        let sample_buffer = SamplesBuffer::new(2,
+                                               oxidgb_core::sound::OUTPUT_FREQUENCY,
+                                               &samples[0 .. sample_count]);
+        audio_input.append(sample_buffer);
     }
 }
 

@@ -129,6 +129,9 @@ impl CPU {
             self.timer_counter += cycles as i32;
         }
 
+        // Handle audio
+        self.mem.sound.step(&mut self.mem.ioregs, cycles);
+
         // Handle GPU
         let gpu_result = self.mem.gpu.step(cycles as u32);
 

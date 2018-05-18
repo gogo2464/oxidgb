@@ -13,12 +13,14 @@ use gpu::GPU;
 use gpu::GPUMode;
 use io;
 use io::IORegisters;
+use sound::Sound;
 
 pub struct GBMemory {
     pub rom : GameROM,
     pub ram : [u8; 8192],
     pub high_ram : [u8; 127 /* - interrupt enable reg */],
     pub gpu : GPU,
+    pub sound : Sound,
 
     pub dirty_interrupts : bool, // If the CPU should handle interrupts
     pub interrupt_reg : u8,
@@ -162,10 +164,11 @@ impl GBMemory {
     /// Builds a new memory manager.
     pub fn build(rom : GameROM) -> GBMemory {
         return GBMemory {
-            rom : rom,
+            rom,
             ram : [0; 8192],
             high_ram : [0; 127],
             gpu : GPU::build(),
+            sound : Sound::build(),
 
             dirty_interrupts : false,
             interrupt_reg : 0,

@@ -204,7 +204,7 @@ pub fn ld_sp_hl(cpu : &mut CPU) -> u8 {
 /// **0xFA** - *LD a,(nn)* - Read \*nn into a
 pub fn ld_a_pnn(cpu : &mut CPU) -> u8 {
     // TODO: WTF?
-    cpu.regs.a = cpu.mem.read((cpu.mem.read_short(cpu.regs.pc) & 0xFFFF));
+    cpu.regs.a = cpu.mem.read(cpu.mem.read_short(cpu.regs.pc) & 0xFFFF);
     cpu.regs.pc += 2;
 
     return 16 /* Cycles */;
