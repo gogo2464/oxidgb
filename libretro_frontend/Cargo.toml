@@ -7,7 +7,7 @@ authors = ["James <jselby@jselby.net>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-libretro-backend = "0.2"
+libretro-backend = "0.2.1"
 
 # Logging implementation
 fern = "0.4.0"

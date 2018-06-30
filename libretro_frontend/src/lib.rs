@@ -25,6 +25,9 @@ use oxidgb_core::cpu::CPU;
 use std::path::Path;
 use std::fs;
 use std::fs::File;
+use std::io::Read;
+use std::error::Error;
+
 use oxidgb_core::rom::get_rom_size;
 
 struct OxidgbEmulator {
@@ -48,9 +51,9 @@ impl Default for OxidgbEmulator {
 }
 
 impl libretro_backend::Core for OxidgbEmulator {
-    fn on_serialize( &mut self, _data: *mut libc::c_void, _size: libc::size_t ) -> bool {
+    /*fn on_serialize( &mut self, _data: *mut libc::c_void, _size: libc::size_t ) -> bool {
         false
-    }
+    }*/
 
     fn info() -> CoreInfo {
         CoreInfo::new("oxidgb", env!("CARGO_PKG_VERSION"))
@@ -120,6 +123,33 @@ impl libretro_backend::Core for OxidgbEmulator {
     fn on_run(&mut self, handle: &mut RuntimeHandle) {
         let mut cpu = self.cpu.take().unwrap();
 
+        let buttons = [
+            JoypadButton::A,
+            JoypadButton::B,
+            JoypadButton::Select,
+            JoypadButton::Start,
+            JoypadButton::Up,
+            JoypadButton::Down,
+            JoypadButton::Left,
+            JoypadButton::Right
+        ];
+
+        let gb_buttons : Vec<GameboyButton> = buttons.iter()
+            .filter(|x| handle.is_joypad_button_pressed(0, **x))
+            .map(|x| match *x {
+                JoypadButton::A => GameboyButton::A,
+                JoypadButton::B => GameboyButton::B,
+                JoypadButton::Select => GameboyButton::SELECT,
+                JoypadButton::Start => GameboyButton::START,
+                JoypadButton::Up => GameboyButton::UP,
+                JoypadButton::Down => GameboyButton::DOWN,
+                JoypadButton::Left => GameboyButton::LEFT,
+                JoypadButton::Right => GameboyButton::RIGHT,
+                _ => unreachable!()
+            })
+            .collect();
+
+        cpu.mem.set_input(&gb_buttons);
         cpu.run(&mut None);
 
         let mut pixel_data = [0 as u8; 160 * 144 * 4];
@@ -134,7 +164,16 @@ impl libretro_backend::Core for OxidgbEmulator {
             }
         }
 
-        handle.upload_audio_frame()
+        let (raw_audio, raw_audio_size) = cpu.mem.sound.take_samples();
+
+        // Resample to i16s
+        let mut output_data = vec![0x0000_i16; if raw_audio_size < 1600 {1600} else {raw_audio_size}];
+
+        for i in 0 .. raw_audio_size {
+            output_data[i] = (raw_audio[i] * (0x7FFF as f32)) as i16;
+        }
+
+        handle.upload_audio_frame(&output_data);
         handle.upload_video_frame(&pixel_data);
 
         self.cpu = Some(cpu);
