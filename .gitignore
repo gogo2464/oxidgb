@@ -54,3 +54,8 @@ fabric.properties
 **/*.rs.bk
 
 # End of https://www.gitignore.io/api/rust,intellij+all
+
+*.nro
+*.nro.so
+*.nso
+*.nso.so
