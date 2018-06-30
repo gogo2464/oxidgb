@@ -13,6 +13,9 @@ extern crate log;
 
 extern crate oxidgb_core;
 
+extern crate serde;
+extern crate bincode;
+
 mod logging;
 
 use libretro_backend::*;
@@ -21,25 +24,30 @@ use oxidgb_core::input::GameboyButton;
 use oxidgb_core::rom::GameROM;
 use oxidgb_core::mem::GBMemory;
 use oxidgb_core::cpu::CPU;
+use oxidgb_core::rom::get_rom_size;
 
 use std::path::Path;
+
 use std::fs;
 use std::fs::File;
-use std::io::Read;
-use std::error::Error;
 
-use oxidgb_core::rom::get_rom_size;
+use std::io::Read;
+use std::io::Cursor;
+
+use std::error::Error;
 
 struct OxidgbEmulator {
     game_data: Option<GameData>,
-    cpu: Option<CPU>
+    cpu: Option<CPU>,
+    serialized_size: usize
 }
 
 impl OxidgbEmulator {
     fn new() -> Self {
         OxidgbEmulator {
             game_data: None,
-            cpu: None
+            cpu: None,
+            serialized_size: 0
         }
     }
 }
@@ -107,6 +115,8 @@ impl libretro_backend::Core for OxidgbEmulator {
 
         self.game_data = Some(game_data);
         self.cpu = Some(cpu);
+
+        self.serialized_size = bincode::serialized_size(&self.cpu).unwrap() as _;
 
         let info = AudioVideoInfo::new()
             .video(160, 144,
@@ -189,6 +199,28 @@ impl libretro_backend::Core for OxidgbEmulator {
         let memory = GBMemory::build(rom);
         let cpu = CPU::build(memory);
         self.cpu = Some(cpu);
+    }
+
+    fn get_serialized_size(&mut self) -> Option<usize> {
+        Some(self.serialized_size)
+    }
+
+    fn on_serialize(&mut self, buffer : &mut [u8]) -> bool {
+        match bincode::serialize_into(&mut Cursor::new(buffer), &self.cpu) {
+            Ok(v) => v,
+            Err(v) => panic!("Error while serializing: {:?}", v)
+        }
+
+        true
+    }
+
+    fn on_unserialize(&mut self, buffer : &[u8]) -> bool {
+        self.cpu = match bincode::deserialize_from(&mut Cursor::new(buffer)) {
+            Ok(v) => v,
+            Err(v) => panic!("Error while unserializing: {:?}", v)
+        };
+
+        true
     }
 }
 

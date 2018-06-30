@@ -15,6 +15,7 @@ use cpu::regs::Registers;
 use cpu::instrs::execute_instruction;
 use cpu::interrupts::InterruptType;
 
+#[derive(Serialize, Deserialize)]
 pub struct CPU {
     pub regs : Registers,
     pub mem : GBMemory,

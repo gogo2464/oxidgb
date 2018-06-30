@@ -7,12 +7,16 @@ authors = ["James <jselby@jselby.net>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-libretro-backend = "0.2.1"
+libretro-backend = {path = "libretro-backend"}
 
 # Logging implementation
 fern = "0.4.0"
 chrono = "0.4.0"
 log = "0.3.8"
+
+serde = {version = "1.0.68", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.68"
+bincode = "1.0.1"
 
 [dependencies.oxidgb_core]
 path = "../core"

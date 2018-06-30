@@ -9,7 +9,7 @@ use alloc::Vec;
 
 /// The different kinds of cartridges that can be handled. Each has a
 ///  specific way of managing memory/providing additional capabilities.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 #[allow(dead_code)] // For debug messages
 pub enum CartridgeType {
     RomOnly           = 0x00,
@@ -42,6 +42,7 @@ pub enum CartridgeType {
 
 /// Holds a game's ROM, and exposes interfaces to read information from
 ///  it intelligently.
+#[derive(Serialize, Deserialize)]
 pub struct GameROM {
     backing_data : Vec<u8>,
     current_bank : u8,

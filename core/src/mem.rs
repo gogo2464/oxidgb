@@ -9,16 +9,22 @@ use input::GameboyButton;
 use input::build_input;
 
 use rom::GameROM;
+
 use gpu::GPU;
 use gpu::GPUMode;
+
 use io;
 use io::IORegisters;
+
 use sound::Sound;
 
+use alloc::Vec;
+
+#[derive(Serialize, Deserialize)]
 pub struct GBMemory {
     pub rom : GameROM,
-    pub ram : [u8; 8192],
-    pub high_ram : [u8; 127 /* - interrupt enable reg */],
+    pub ram : Vec<u8>, // Fixed size of 8192
+    pub high_ram : Vec<u8>, // Fixed size of 127 (not 128, as - interrupt enable reg)
     pub gpu : GPU,
     pub sound : Sound,
 
@@ -165,8 +171,8 @@ impl GBMemory {
     pub fn build(rom : GameROM) -> GBMemory {
         return GBMemory {
             rom,
-            ram : [0; 8192],
-            high_ram : [0; 127],
+            ram : vec![0; 8192],
+            high_ram : vec![0; 127],
             gpu : GPU::build(),
             sound : Sound::build(),
 

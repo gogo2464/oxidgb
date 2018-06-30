@@ -1,8 +1,10 @@
-use io::IORegisters;
-
 /// sound.rs
 ///
 /// I/O register sound emulation.
+
+use io::IORegisters;
+
+use alloc::Vec;
 
 // TODO: Vary this on different platforms?
 const SOUND_CPU_SPEED : u32 = 4194304;
@@ -40,7 +42,7 @@ fn rectangle_wave(step : u64, frequency : u32, low_percent : f32) -> f32 {
     }
 }
 
-
+#[derive(Serialize, Deserialize)]
 pub struct Sound {
     channel_1_running : bool,
     channel_1_step : u64,
@@ -48,7 +50,7 @@ pub struct Sound {
     channel_2_running : bool,
     channel_2_step : u64,
 
-    samples : [f32; FRAME_SIZE],
+    samples : Vec<f32>,
     sample_pointer : usize,
 
     last_cycle : u64
@@ -246,19 +248,19 @@ impl Sound {
 
         if self.channel_1_running {
             if registers.nr51 & 0x1 == 0x1 {
-                left_wave += register_1_wave / 100f32 / 2f32;
+                left_wave += register_1_wave / 2f32;
             }
             if (registers.nr51 >> 4) & 0x1 == 0x1 {
-                right_wave += register_1_wave / 100f32 / 2f32;
+                right_wave += register_1_wave / 2f32;
             }
         }
 
         if self.channel_2_running {
             if (registers.nr51 >> 1) & 0x1 == 0x1 {
-                left_wave += register_2_wave / 100f32 / 2f32;
+                left_wave += register_2_wave / 2f32;
             }
             if (registers.nr51 >> 5) & 0x1 == 0x1 {
-                right_wave += register_2_wave / 100f32 / 2f32;
+                right_wave += register_2_wave / 2f32;
             }
         }
 
@@ -281,8 +283,12 @@ impl Sound {
 
     /// Drains all samples from this device.
     pub fn take_samples(&mut self) -> ([f32; FRAME_SIZE], usize) {
-        let samples = self.samples;
-        self.samples = [0f32; FRAME_SIZE];
+        let mut samples = [0f32; FRAME_SIZE];
+
+        for i in 0 .. FRAME_SIZE {
+            samples[i] = self.samples[i];
+            self.samples[i] = 0f32;
+        }
 
         let old_pointer = self.sample_pointer;
         self.sample_pointer = 0;
@@ -298,7 +304,7 @@ impl Sound {
             channel_2_running : false,
             channel_2_step : 0,
 
-            samples : [0f32; FRAME_SIZE],
+            samples : vec![0f32; FRAME_SIZE],
             sample_pointer: 0,
             last_cycle : 0,
         }

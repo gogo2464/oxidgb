@@ -4,13 +4,14 @@
  * Handles input devices for the Gameboy.
 **/
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum GameboyButton {
     A, B,
     LEFT, RIGHT, UP, DOWN,
     START, SELECT
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct GameboyInput {
     pub p14 : u8,
     pub p15 : u8

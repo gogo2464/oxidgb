@@ -9,6 +9,7 @@ use mem::GBMemory;
 use gpu::GPUMode;
 
 /// Storage for various I/O registers.
+#[derive(Serialize, Deserialize)]
 pub struct IORegisters {
     pub p1 : u8,    // 0x00 - Joypad info and controller (R/W)
     pub sb : u8,    // 0x01 - Serial transfer data (R/W)
@@ -176,7 +177,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x00 => mem.ioregs.p1 = val,
         0x01 => {
             // Serial
-            //print!("{}", char::from_u32(val as u32).unwrap());
+            //info!("{}", val as char);
         },
         0x02 => mem.ioregs.sb = val,
         0x04 => mem.ioregs.div = 0,

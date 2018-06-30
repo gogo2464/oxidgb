@@ -355,6 +355,9 @@ fn main() {
 
         // Handle audio
         let (samples, sample_count) = cpu.mem.sound.take_samples();
+        for i in 0 .. samples.len() {
+            samples[i] /= 100f32;
+        }
         let sample_buffer = SamplesBuffer::new(2,
                                                oxidgb_core::sound::OUTPUT_FREQUENCY,
                                                &samples[0 .. sample_count]);
