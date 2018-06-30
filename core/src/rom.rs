@@ -47,7 +47,7 @@ pub struct GameROM {
     backing_data : Vec<u8>,
     current_bank : u8,
 
-    cart_ram : Vec<u8>,
+    pub cart_ram : Vec<u8>,
     ram_size : usize,
 
     pub name : String,

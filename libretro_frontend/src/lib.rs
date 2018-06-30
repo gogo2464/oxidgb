@@ -222,6 +222,20 @@ impl libretro_backend::Core for OxidgbEmulator {
 
         true
     }
+
+    fn save_memory(&mut self) -> Option<&mut [u8]> {
+        match &mut self.cpu {
+            &mut Some(ref mut v) => Some(&mut v.mem.rom.cart_ram),
+            _ => None
+        }
+    }
+
+    fn system_memory(&mut self) -> Option<&mut [u8]> {
+        match &mut self.cpu {
+            &mut Some(ref mut v) => Some(&mut v.mem.ram),
+            _ => None
+        }
+    }
 }
 
 libretro_core!(OxidgbEmulator);
