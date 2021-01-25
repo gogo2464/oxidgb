@@ -17,7 +17,7 @@ pub fn swap_phl(cpu : &mut CPU) -> u8 {
 
     cpu.mem.write(cpu.regs.get_hl(), new_value);
 
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 /// **0xCB 0x30 ~ 0x37** - *SWAP X* - Swaps upper and lower nibbles of X.
@@ -32,7 +32,7 @@ macro_rules! swap {
             cpu.regs.set_flag_z(new_value == 0);
             cpu.regs.$reg = new_value;
 
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }

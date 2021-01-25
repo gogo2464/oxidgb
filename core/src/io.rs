@@ -46,7 +46,7 @@ pub struct IORegisters {
 impl IORegisters {
     pub fn build() -> IORegisters {
         // TODO: Validate these
-        return IORegisters {
+        IORegisters {
             p1 : 0,
             sb : 0,
             div : 0xABCC,
@@ -85,7 +85,7 @@ impl IORegisters {
 
 /// Reads a I/O register.
 pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
-    return match ptr {
+    match ptr {
         0x00 => {
             let p14 = (mem.ioregs.p1 >> 5) & 0x1 == 1;
             let p15 = (mem.ioregs.p1 >> 4) & 0x1 == 1;

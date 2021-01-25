@@ -98,7 +98,7 @@ impl CPU<'_> {
             self.regs.pc = self.regs.pc.wrapping_add(1);
 
             if raw_instruction == 0xCB {
-                raw_instruction = ((self.mem.read(current_instr + 1) as u16) << 8) | (raw_instruction);
+                raw_instruction |= (self.mem.read(current_instr + 1) as u16) << 8;
                 self.regs.pc = self.regs.pc.wrapping_add(1);
             }
 
@@ -132,18 +132,15 @@ impl CPU<'_> {
         // Handle GPU
         let gpu_result = self.mem.gpu.step(cycles as u32);
 
-        match gpu_result {
-            Some(value) => {
-                //println!("GPU throwing interrupt: {:?}", value);
-                self.throw_interrupt(value);
-                if value == InterruptType::VBLANK {
-                    return true
-                }
+        if let Some(value) = gpu_result {
+            //println!("GPU throwing interrupt: {:?}", value);
+            self.throw_interrupt(value);
+            if value == InterruptType::VBLANK {
+                return true
             }
-            None => {}
         }
 
-        return false;
+        false
     }
 
     /// Runs a iteration of the CPU
@@ -170,7 +167,7 @@ impl CPU<'_> {
         self.mem.ioregs.iflag |= 1 << (interrupt as u8);
         self.mem.dirty_interrupts = true;
 
-        return true;
+        true
     }
 
     /// Callback from memory to try to throw a memory interrupt.
@@ -206,14 +203,14 @@ impl CPU<'_> {
             InterruptType::KEYPAD => 0x0060
         };
 
-        return true;
+        true
     }
 
     /// Builds a CPU from the specified memory module.
     pub fn build(mem : GBMemory) -> CPU {
-        return CPU {
+        CPU {
             regs : CPU::get_default_registers(),
-            mem : mem,
+            mem,
             interrupts_enabled : true,
             interrupts_countdown : -1,
             stopped : false,
@@ -228,7 +225,7 @@ impl CPU<'_> {
 
     /// Returns the default expected state for the CPU registers.
     pub fn get_default_registers() -> Registers {
-        return Registers {
+        Registers {
             a: 0x01,
             f: 0xB0,
 

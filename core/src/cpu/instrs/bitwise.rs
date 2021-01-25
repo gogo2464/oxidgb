@@ -22,7 +22,7 @@ fn reg_xor(registers : &mut Registers, y_val: u8) {
 pub fn xor(x : u8, cpu : &mut CPU) -> u8 {
     reg_xor(&mut cpu.regs, x);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /**
@@ -33,7 +33,7 @@ pub fn xor_hl(cpu : &mut CPU) -> u8 {
     let value = cpu.mem.read(cpu.regs.get_hl());
     reg_xor(&mut cpu.regs, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /**
@@ -44,7 +44,7 @@ pub fn xor_n(cpu : &mut CPU) -> u8 {
     cpu.regs.pc += 1;
     reg_xor(&mut cpu.regs, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /**
@@ -70,7 +70,7 @@ fn reg_or(registers : &mut Registers, y_val: u8) {
 pub fn or(x : u8, cpu : &mut CPU) -> u8 {
     reg_or(&mut cpu.regs, x);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /**
@@ -81,7 +81,7 @@ pub fn or_phl(cpu : &mut CPU) -> u8 {
     let value = cpu.mem.read(cpu.regs.get_hl());
     reg_or(&mut cpu.regs, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /**
@@ -92,7 +92,7 @@ pub fn or_n(cpu : &mut CPU) -> u8 {
     cpu.regs.pc += 1;
     reg_or(&mut cpu.regs, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /**
@@ -119,7 +119,7 @@ fn reg_and(registers : &mut Registers, y_val: u8) {
 pub fn and(x : u8, cpu : &mut CPU) -> u8 {
     reg_and(&mut cpu.regs, x);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /**
@@ -129,7 +129,7 @@ pub fn and_phl(cpu : &mut CPU) -> u8 {
     let value = cpu.mem.read(cpu.regs.get_hl());
     reg_and(&mut cpu.regs, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /**
@@ -140,5 +140,5 @@ pub fn and_n(cpu : &mut CPU) -> u8 {
     cpu.regs.pc += 1;
     reg_and(&mut cpu.regs, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }

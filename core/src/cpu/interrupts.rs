@@ -17,7 +17,7 @@ pub enum InterruptType {
 
 impl InterruptType {
     pub fn get_by_bit(bit : u8) -> Option<InterruptType> {
-        return match bit {
+        match bit {
             0 => Some(InterruptType::VBLANK),
             1 => Some(InterruptType::LCDC),
             2 => Some(InterruptType::TIMER),

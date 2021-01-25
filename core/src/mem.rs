@@ -47,7 +47,7 @@ pub struct GBMemory<'a> {
 impl GBMemory<'_> {
     /// Reads a value from memory. 0xFF if invalid.
     pub fn read(&self, ptr : u16) -> u8 {
-        let result = match ptr {
+        match ptr {
             0xFFFF => { // Interrupt enable reg
                 self.interrupt_reg
             }
@@ -96,9 +96,7 @@ impl GBMemory<'_> {
             0x0000 ..= 0x7FFF => { // Cartridge / Switchable ROM
                 self.rom.read(ptr)
             }
-        };
-        //println!("${:04X}: Read  ${:02X}", ptr, result);
-        return result;
+        }
     }
 
     /// Writes a value to a memory location if possible.
@@ -156,7 +154,7 @@ impl GBMemory<'_> {
 
     /// Reads a short. 0xFFFF if invalid.
     pub fn read_short(&self, ptr : u16) -> u16 {
-        return (self.read(ptr) as u16) | ((self.read(ptr + 1) as u16) << 8);
+        (self.read(ptr) as u16) | ((self.read(ptr + 1) as u16) << 8)
     }
 
     /// Writes a short value to a memory location if possible.
@@ -172,7 +170,7 @@ impl GBMemory<'_> {
 
     /// Builds a new memory manager.
     pub fn build(rom : GameROM) -> GBMemory {
-        return GBMemory {
+        GBMemory {
             rom,
             #[cfg(feature = "heap_alloc")]
             ram : vec![0; 8192],

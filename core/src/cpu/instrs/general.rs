@@ -22,7 +22,7 @@ macro_rules! add {
             cpu.regs.set_flag_h(((y & 0x0F) + (x & 0x0F)) > 0xF);
             cpu.regs.set_flag_c((y as u16 + x as u16) > 0xFF);
 
-            return 4 /* Cycles */;
+            4 /* Cycles */
         }
     )
 }
@@ -50,7 +50,7 @@ macro_rules! adc {
             cpu.regs.set_flag_h(((y & 0x0F) + (x & 0x0F) + carry) > 0xF);
             cpu.regs.set_flag_c((y as u16 + x as u16 + carry as u16) > 0xFF);
 
-            return 4 /* Cycles */;
+            4 /* Cycles */
         }
     )
 }
@@ -78,7 +78,7 @@ pub fn add_a_n(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_h(((value & 0x0F) + (prev_value & 0x0F)) > 0xF);
     cpu.regs.set_flag_c(((prev_value as u16) + (value as u16)) > 0xFF);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /**
@@ -96,7 +96,7 @@ pub fn add_a_phl(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_h(((value & 0x0F) + (prev_value & 0x0F)) > 0xF);
     cpu.regs.set_flag_c(((prev_value as u16) + (value as u16)) > 0xFF);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /**
@@ -114,7 +114,7 @@ pub fn sub_a_n(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_h(((prev_value as i16 & 0x0F) - (value as i16 & 0x0F)) < 0);
     cpu.regs.set_flag_c(((prev_value as i16) - (value as i16)) < 0);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0x19 ~ 0x39** - *ADD HL,X* - Add XX to HL.
@@ -128,7 +128,7 @@ pub fn add_hl_x(val : u16, cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_h(((val & 0x0FFF) + (prev_value & 0x0FFF)) > 0xFFF);
     cpu.regs.set_flag_c(((prev_value as u32) + (val as u32)) > 0xFFFF);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0xCE** - *ADC a,#* - Add # + Carry flag to a.
@@ -157,7 +157,7 @@ pub fn adc_a_n(cpu : &mut CPU) -> u8 {
             ^ (value as u16))
             & 0x100) == 0x100);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0xCE** - *ADC a,#* - Add # + Carry flag to a.
@@ -186,7 +186,7 @@ pub fn adc_a_phl(cpu : &mut CPU) -> u8 {
         ^ (value as u16))
         & 0x100) == 0x100);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0xE8** - *ADD sp,#S* - Add signed value # to sp.
@@ -215,7 +215,7 @@ pub fn add_sp_ns(cpu : &mut CPU) -> u8 {
         ^ (value as i16))
         & 0x100) == 0x100);
 
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 // Subtraction
@@ -235,7 +235,7 @@ macro_rules! sub {
             cpu.regs.set_flag_h((prev_value & 0xF) < (new_value & 0xF));
             cpu.regs.set_flag_c((prev_value as i16 - x as i16) < 0);
 
-            return 4 /* Cycles */;
+            4 /* Cycles */
         }
     )
 }
@@ -261,7 +261,7 @@ pub fn sub_phl(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_h((prev_value & 0xF) < (new_value & 0xF));
     cpu.regs.set_flag_c((prev_value as i16 - x as i16) < 0);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0x80 ~ 0xE8** - *SBC X* - Subtract X from a with carry.
@@ -279,7 +279,7 @@ macro_rules! sbc {
             cpu.regs.set_flag_h(((x as i16 & 0x0F) - (y as i16 & 0x0F) - carry as i16) < 0);
             cpu.regs.set_flag_c((x as i16 - y as i16 - carry as i16) < 0);
 
-            return 4 /* Cycles */;
+            4 /* Cycles */
         }
     )
 }
@@ -310,7 +310,7 @@ pub fn sbc_phl(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_c((prev_value as i16)
         - (value as i16) - (flag as i16) < 0);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0xDE** - *SBC n* -  Subtract n + Carry from a.
@@ -331,5 +331,5 @@ pub fn sbc_n(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_c((prev_value as i16)
                         - (value as i16) - (flag as i16) < 0);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }

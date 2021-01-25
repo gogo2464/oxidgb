@@ -28,21 +28,17 @@ const FRAME_SIZE : usize = (OUTPUT_FREQUENCY / 59) as usize * 2; // 59 as framer
 fn rectangle_wave(step : u64, frequency : u32, low_percent : f32) -> f32 {
     let step = (step as f64) / SOUND_CPU_SPEED as f64;
 
-    //return (step * frequency as f64).sin() as f32;
-
     let current_interval_float = step * frequency as f64;
     let current_interval = current_interval_float as u64;
 
     let interval_percentage = current_interval_float - current_interval as f64;
 
-    //println!("x: {} x {} x {} x {} x {} x {}", step, current_interval_float, current_interval, interval_percentage, frequency, low_percent);
-
     if interval_percentage < low_percent.into() {
-        return -1f32;
-    } else if interval_percentage == low_percent.into() {
-        return 0f32;
+        -1f32
+    } else if interval_percentage > low_percent.into() {
+        1f32
     } else {
-        return 1f32;
+        0f32
     }
 }
 
@@ -130,11 +126,9 @@ impl Sound {
                     if gb_frequency as i32 - component as i32 >= 0 {
                         gb_frequency -= component;
                     }
-                } else {
-                    if gb_frequency + component <= 0b111 {
+                } else if gb_frequency + component <= 0b111 {
                         gb_frequency += component;
                     }
-                }
 
                 // Update frequency
                 registers.nr13 = (gb_frequency & 0xFF) as u8;
@@ -164,11 +158,9 @@ impl Sound {
                     if volume < 0xF {
                         volume += 1;
                     }
-                } else {
-                    if volume > 0 {
+                } else if volume > 0 {
                         volume -= 1;
                     }
-                }
 
                 // Update presented volume
                 registers.nr12 &= !(0b1111 << 4);
@@ -248,10 +240,8 @@ impl Sound {
                     if volume < 0xF {
                         volume += 1;
                     }
-                } else {
-                    if volume > 0 {
-                        volume -= 1;
-                    }
+                } else if volume > 0 {
+                    volume -= 1;
                 }
 
                 // Update presented volume
@@ -298,13 +288,12 @@ impl Sound {
             right_wave *= ((registers.nr50 & 0b111) as f32) / (0x0F as f32);
 
             if ((self.last_cycle as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64 !=
-                (((self.last_cycle + cycles as u64) as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64 {
-                if self.sample_pointer + 2 <= self.samples.len() {
+                (((self.last_cycle + cycles as u64) as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64
+                && self.sample_pointer + 2 <= self.samples.len() {
                     self.samples[self.sample_pointer] = left_wave;
                     self.samples[self.sample_pointer + 1] = right_wave;
 
                     self.sample_pointer += 2;
-                }
             }
         }
 
@@ -316,9 +305,9 @@ impl Sound {
     pub fn take_samples(&mut self) -> ([f32; FRAME_SIZE], usize) {
         let mut samples = [0f32; FRAME_SIZE];
 
-        for i in 0 .. FRAME_SIZE {
-            samples[i] = self.samples[i];
-            self.samples[i] = 0f32;
+        for (i, element) in self.samples.iter_mut().enumerate().take(FRAME_SIZE) {
+            samples[i] = *element;
+            *element = 0f32;
         }
 
         let old_pointer = self.sample_pointer;

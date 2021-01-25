@@ -69,7 +69,7 @@ pub struct GameROM<'a> {
 
 impl<'a> GameROM<'a> {
     pub fn read(&self, ptr : u16) -> u8 {
-        return match self.cart_type {
+        match self.cart_type {
             CartridgeType::RomOnly => {
                 self.backing_data[ptr as usize]
             }
@@ -100,7 +100,7 @@ impl<'a> GameROM<'a> {
                 #[cfg(not(feature = "debug_structs"))]
                 panic!("Unimplemented cart type");
             }
-        };
+        }
     }
 
     pub fn read_ram(&self, ptr : u16) -> u8 {
@@ -110,7 +110,7 @@ impl<'a> GameROM<'a> {
             return 0xFF;
         }
 
-        return self.cart_ram[ptr as usize];
+        self.cart_ram[ptr as usize]
     }
 
     pub fn write(&mut self, ptr : u16, val : u8) {
@@ -278,7 +278,7 @@ impl<'a> GameROM<'a> {
         #[cfg(feature = "logging")]
         debug!("Allocated {} bytes of cart RAM", ram.len());
 
-        return GameROM {
+        GameROM {
             backing_data : data,
             cart_type,
             current_bank : 1,
@@ -288,13 +288,13 @@ impl<'a> GameROM<'a> {
 
             #[cfg(feature = "heap_alloc")]
             alloc_marker : PhantomData
-        };
+        }
     }
 }
 
 /// Returns a ROM size for a particular ROM id.
 pub fn get_rom_size(id : u8) -> usize {
-    return match id {
+    match id {
         0    => 32   * 1024, // 32  Kbyte
         1    => 64   * 1024, // 64  Kbyte
         2    => 128  * 1024, // 128 Kbyte
@@ -311,7 +311,7 @@ pub fn get_rom_size(id : u8) -> usize {
 
 /// Returns a RAM size for a particular RAM id.
 pub fn get_ram_size(id : u8) -> usize {
-    return match id {
+    match id {
         0 => 0,          // ROM only
         1 => 2   * 1024, // 2  Kbyte
         2 => 8   * 1024, // 8  Kbyte

@@ -125,7 +125,7 @@ impl GPU {
             }
         }
 
-        return None;
+        None
     }
 
     /// Returns if the screen is currently enabled.
@@ -139,7 +139,7 @@ impl GPU {
             return Some(InterruptType::LCDC);
         }
 
-        return self.check_interrupt();
+        self.check_interrupt()
     }
 
     /// Checks to see if any interrupts should be thrown.
@@ -161,7 +161,7 @@ impl GPU {
             return Some(InterruptType::LCDC);
         }
 
-        return None;
+        None
     }
 
     /// Draws a pixel to the backing framebuffer, based upon the overall
@@ -246,15 +246,15 @@ impl GPU {
         }
 
         // -- Window
-        let wx = (self.wx & 0xFF) as u16;
-        let wy = (self.wy & 0xFF) as u16;
+        let wx = self.wx as u16;
+        let wy = self.wy as u16;
 
         if window_display {
             let mut x = -(wx as i16) + 7;
             let y = (self.current_line as i16) - (wy as i16);
 
             for col in 0..160 {
-                if y < 0 || y >= 144
+                if !(0 ..= 143).contains(&y)
                     || self.current_line as u16 >= wy + 144
                     || wx >= 160 || wy >= 144 {
                     break
@@ -348,12 +348,12 @@ impl GPU {
                 let palette = info >> 4 & 0x1 == 1;
 
                 let tile_pos = (self.oam[info_ptr + 2] as i8 as i16 &
-                                    if sprite_size {(!(1 as u8)) as i16} else {0xFF}) * 16;
+                                    if sprite_size {(!(1u8)) as i16} else {0xFF}) * 16;
                 let tex_pos = (tile_pos +
                              if y_flip { sprite_height - 1 - y_tile } else { y_tile } * 2) as usize;
 
-                let first_byte = self.vram[tex_pos] & 0xFF;
-                let second_byte = self.vram[tex_pos + 1] & 0xFF;
+                let first_byte = self.vram[tex_pos];
+                let second_byte = self.vram[tex_pos + 1];
 
                 for bit in 0 .. 8 {
                     if y_pos + y_tile >= 144
@@ -364,8 +364,8 @@ impl GPU {
                     }
 
                     // Combine our bits from first and second byte
-                    let first_bit = (first_byte >> 7 - bit) & 0x1;
-                    let second_bit = (second_byte >> 7 - bit) & 0x1;
+                    let first_bit = (first_byte >> (7 - bit)) & 0x1;
+                    let second_bit = (second_byte >> (7 - bit)) & 0x1;
                     let combined_bit = first_bit + second_bit * 2;
 
                     let combined : u8;
@@ -383,8 +383,7 @@ impl GPU {
                     }
 
                     // If this pixel is filled in, render it (scaled) to the screen
-                    if has_priority || !has_priority
-                        && (self.pixel_data[array_pos * PITCH] & 0xFF) as u8 == self.palette[0] {
+                    if has_priority || self.pixel_data[array_pos * PITCH] == self.palette[0] {
                         self.draw_pixel(array_pos, combined);
                     }
                 }
@@ -394,7 +393,7 @@ impl GPU {
 
     /// Builds a new instance of the GPU
     pub fn build() -> GPU {
-        return GPU {
+        GPU {
             #[cfg(feature = "heap_alloc")]
             pixel_data : vec![0xFF; 160 * 144 * PITCH],
             #[cfg(not(feature = "heap_alloc"))]
@@ -424,6 +423,6 @@ impl GPU {
 
             internal_clock: 0,
             current_line: 0x94,
-        };
+        }
     }
 }

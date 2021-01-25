@@ -16,7 +16,7 @@ pub fn sla_phl(cpu : &mut CPU) -> u8 {
     cpu.regs.f = 0;
     cpu.regs.set_flag_c((current_value >> 7) & 0x1 == 1);
     cpu.regs.set_flag_z(new_value == 0);
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 /// **0xCB 0x23** - *SLA X* - Shift X left into Carry. LSB of a set to 0.
@@ -31,7 +31,7 @@ macro_rules! sla {
             cpu.regs.f = 0;
             cpu.regs.set_flag_c((current_value >> 7) & 0x1 == 1);
             cpu.regs.set_flag_z(new_value == 0);
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }
@@ -55,7 +55,7 @@ pub fn srl_phl(cpu : &mut CPU) -> u8 {
     cpu.regs.f = 0;
     cpu.regs.set_flag_c(current_value & 0x1 == 1);
     cpu.regs.set_flag_z(new_value == 0);
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0xCB 0x38 ~ 0xCB 0x3F** - *SRL X* - Shift X right through Carry.
@@ -71,7 +71,7 @@ macro_rules! srl {
             cpu.regs.f = 0;
             cpu.regs.set_flag_c(current_value & 0x1 == 1);
             cpu.regs.set_flag_z(new_value == 0);
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }
@@ -94,7 +94,7 @@ pub fn sra_phl(cpu : &mut CPU) -> u8 {
     cpu.regs.f = 0;
     cpu.regs.set_flag_c(current_value & 0x1 == 1);
     cpu.regs.set_flag_z(new_value == 0);
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 /// **0xCB 0x28 ~ 0xCB 0x2F** - *SRA X* - Shift X right through Carry.
@@ -109,7 +109,7 @@ macro_rules! sra {
             cpu.regs.f = 0;
             cpu.regs.set_flag_c(current_value & 0x1 == 1);
             cpu.regs.set_flag_z(new_value == 0);
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }

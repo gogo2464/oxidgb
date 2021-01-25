@@ -24,19 +24,19 @@ pub fn build_input(input : &[GameboyButton]) -> GameboyInput {
 
     for key in input {
         match key {
-            &GameboyButton::DOWN   => p14 |= 1 << 3,
-            &GameboyButton::UP     => p14 |= 1 << 2,
-            &GameboyButton::LEFT   => p14 |= 1 << 1,
-            &GameboyButton::RIGHT  => p14 |= 1,
-            &GameboyButton::START  => p15 |= 1 << 3,
-            &GameboyButton::SELECT => p15 |= 1 << 2,
-            &GameboyButton::B      => p15 |= 1 << 1,
-            &GameboyButton::A      => p15 |= 1,
+            GameboyButton::DOWN   => p14 |= 1 << 3,
+            GameboyButton::UP     => p14 |= 1 << 2,
+            GameboyButton::LEFT   => p14 |= 1 << 1,
+            GameboyButton::RIGHT  => p14 |= 1,
+            GameboyButton::START  => p15 |= 1 << 3,
+            GameboyButton::SELECT => p15 |= 1 << 2,
+            GameboyButton::B      => p15 |= 1 << 1,
+            GameboyButton::A      => p15 |= 1,
         }
     }
 
-    return GameboyInput {
-        p14 : p14,
-        p15 : p15
+    GameboyInput {
+        p14,
+        p15
     }
 }

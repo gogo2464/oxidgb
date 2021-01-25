@@ -17,7 +17,7 @@ fn rl_helper(cpu : &mut CPU, value : u8) -> u8 {
     cpu.regs.set_flag_c((value >> 7) & 0x1 == 1);
     cpu.regs.set_flag_z(result == 0);
 
-    return result;
+    result
 }
 
 /// **0x17** - *RLA* - Rotate a left through Carry.
@@ -26,7 +26,7 @@ pub fn rla(cpu : &mut CPU) -> u8 {
     cpu.regs.a = rl_helper(cpu, current_value);
     cpu.regs.set_flag_z(false);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0xCB 0x16** - *RL (hl)* - Rotate (hl) left through Carry.
@@ -35,7 +35,7 @@ pub fn rl_phl(cpu : &mut CPU) -> u8 {
     let result = rl_helper(cpu, current_value);
     cpu.mem.write(cpu.regs.get_hl(), result);
 
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 macro_rules! rl {
@@ -43,7 +43,7 @@ macro_rules! rl {
         pub fn $func(cpu : &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             cpu.regs.$reg = rl_helper(cpu, current_value);
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }
@@ -67,7 +67,7 @@ fn rr_helper(cpu : &mut CPU, value : u8) -> u8 {
     cpu.regs.set_flag_c(value & 0x1 == 1);
     cpu.regs.set_flag_z(result == 0);
 
-    return result;
+    result
 }
 
 /// **0x1F** - *RRA* - Rotate a right through Carry.
@@ -76,7 +76,7 @@ pub fn rra(cpu : &mut CPU) -> u8 {
     cpu.regs.a = rr_helper(cpu, current_value);
     cpu.regs.set_flag_z(false);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0xCB 0x1E** - *RR (hl)* - Rotate (hl) right through Carry.
@@ -85,7 +85,7 @@ pub fn rr_phl(cpu : &mut CPU) -> u8 {
     let result = rr_helper(cpu, current_value);
     cpu.mem.write(cpu.regs.get_hl(), result);
 
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 macro_rules! rr {
@@ -93,7 +93,7 @@ macro_rules! rr {
         pub fn $func(cpu : &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             cpu.regs.$reg = rr_helper(cpu, current_value);
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }
@@ -115,7 +115,7 @@ fn rlc_helper(cpu : &mut CPU, value : u8) -> u8 {
     cpu.regs.set_flag_c((value >> 7) & 0x1 == 1);
     cpu.regs.set_flag_z(result == 0);
 
-    return result;
+    result
 }
 
 /// **0x07** - *RLCA* - Rotate a left. Bit 7 into Carry.
@@ -124,7 +124,7 @@ pub fn rlca(cpu : &mut CPU) -> u8 {
     cpu.regs.a = rlc_helper(cpu, current_value);
     cpu.regs.set_flag_z(false);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0xCB 0x06** - *RLC (hl)* - Rotate a left. Bit 7 into Carry.
@@ -133,7 +133,7 @@ pub fn rlc_phl(cpu : &mut CPU) -> u8 {
     let result = rlc_helper(cpu, current_value);
     cpu.mem.write(cpu.regs.get_hl(), result);
 
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 macro_rules! rlc {
@@ -141,7 +141,7 @@ macro_rules! rlc {
         pub fn $func(cpu : &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             cpu.regs.$reg = rlc_helper(cpu, current_value);
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }
@@ -163,7 +163,7 @@ fn rrc_helper(cpu : &mut CPU, value : u8) -> u8 {
     cpu.regs.set_flag_c(value & 0x1 == 1);
     cpu.regs.set_flag_z(result == 0);
 
-    return result;
+    result
 }
 
 /// **0x07** - *RRCA* - Rotate a left. Bit 7 into Carry.
@@ -172,7 +172,7 @@ pub fn rrca(cpu : &mut CPU) -> u8 {
     cpu.regs.a = rrc_helper(cpu, current_value);
     cpu.regs.set_flag_z(false);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0xCB 0x0E** - *RRC (hl)* - Rotate (hl) right. Bit 0 into Carry.
@@ -181,7 +181,7 @@ pub fn rrc_phl(cpu : &mut CPU) -> u8 {
     let result = rrc_helper(cpu, current_value);
     cpu.mem.write(cpu.regs.get_hl(), result);
 
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 macro_rules! rrc {
@@ -189,7 +189,7 @@ macro_rules! rrc {
         pub fn $func(cpu : &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             cpu.regs.$reg = rrc_helper(cpu, current_value);
-            return 8 /* Cycles */;
+            8 /* Cycles */
         }
     )
 }

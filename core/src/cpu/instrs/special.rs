@@ -8,13 +8,13 @@ use cpu::CPU;
 
 /// **0x00** - *NOP* - No operation.
 pub fn nop(_ : &mut CPU) -> u8 {
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0x10** (0x00) - *STOP* - Halt CPU & LCD display until button pressed.
 pub fn stop(cpu : &mut CPU) -> u8 {
     cpu.stopped = true;
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0x27** - *DAA* - Convert to a Binary Coded Decimal
@@ -45,9 +45,9 @@ pub fn daa(cpu : &mut CPU) -> u8 {
     
     cpu.regs.a = value;
     
-    cpu.regs.set_flag_z((value & 0xFF) == 0);
+    cpu.regs.set_flag_z(value == 0);
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0x2F** - *CPL* - Complement register a
@@ -57,7 +57,7 @@ pub fn cpl(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_n(true);
     cpu.regs.set_flag_h(true);
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0x37** - *SCF* - Set carry flag.
@@ -66,7 +66,7 @@ pub fn scf(cpu : &mut CPU) -> u8 {
     cpu.regs.set_flag_h(false);
     cpu.regs.set_flag_c(true);
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0x3F** - *CCF* - Compliment carry.
@@ -76,7 +76,7 @@ pub fn ccf(cpu : &mut CPU) -> u8 {
     let new_flag = !cpu.regs.get_flag_c();
     cpu.regs.set_flag_c(new_flag);
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0xF3** - *DI* - Disable interrupts
@@ -85,21 +85,21 @@ pub fn di(cpu : &mut CPU) -> u8 {
     cpu.interrupts_countdown = -1;
     cpu.interrupts_enabled = false;
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0xFB** - *EI* - Enable interrupts
 pub fn ei(cpu : &mut CPU) -> u8 {
     cpu.interrupts_countdown = 1; // Countdown to enable
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0x76** - *HALT* - Halt the CPU until a interrupt occurs.
 pub fn halt(cpu : &mut CPU) -> u8 {
     cpu.halted = true;
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// Unknown instruction handler.

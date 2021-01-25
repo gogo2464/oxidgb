@@ -23,7 +23,7 @@ pub fn cp(x : u8, cpu : &mut CPU) -> u8 {
     let y = cpu.regs.a;
     compare_registers(&mut cpu.regs, y, x);
 
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// **0xBE** - *CP (hl)* - Compare a with (hl)
@@ -32,7 +32,7 @@ pub fn cp_phl(cpu : &mut CPU) -> u8 {
     let y = cpu.regs.a;
     compare_registers(&mut cpu.regs, y, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }
 
 /// **0xFE** - *CP #* - Compare a with #
@@ -42,5 +42,5 @@ pub fn cp_n(cpu : &mut CPU) -> u8 {
     let y = cpu.regs.a;
     compare_registers(&mut cpu.regs, y, value);
 
-    return 8 /* Cycles */;
+    8 /* Cycles */
 }

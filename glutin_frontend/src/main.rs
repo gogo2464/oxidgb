@@ -312,8 +312,7 @@ fn main() {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::Resized(physical_size) => context.resize(physical_size),
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                WindowEvent::KeyboardInput { input, .. } => match input.virtual_keycode {
-                    Some(key) => {
+                WindowEvent::KeyboardInput { input, .. } => if let Some(key) = input.virtual_keycode {
                         let key = match key {
                             VirtualKeyCode::Up => GameboyButton::UP,
                             VirtualKeyCode::Down => GameboyButton::DOWN,
@@ -348,16 +347,11 @@ fn main() {
                                 }
                             }
                             ElementState::Released => {
-                                match gb_buttons.iter().position(|x| *x == key) {
-                                    Some(pos) => {
-                                        gb_buttons.remove(pos);
-                                    }
-                                    None => {}
+                                if let Some(pos) = gb_buttons.iter().position(|x| *x == key) {
+                                    gb_buttons.remove(pos);
                                 }
                             }
                         }
-                    }
-                    None => {}
                 },
                 _ => (),
             },
@@ -385,7 +379,7 @@ fn main() {
                             gl::TRIANGLES,
                             6,
                             gl::UNSIGNED_INT,
-                            (0 * mem::size_of::<f32>()) as *const () as *const _,
+                            std::ptr::null::<_>(),
                         );
                     }
                 }
@@ -418,8 +412,8 @@ fn main() {
                         let (mut samples, sample_count) = cpu.mem.sound.take_samples();
 
                         if !fast_forward {
-                            for i in 0..samples.len() {
-                                samples[i] /= 100f32;
+                            for item in &mut samples {
+                                *item /= 100f32;
                             }
                             let sample_buffer = SamplesBuffer::new(
                                 2,
@@ -462,7 +456,7 @@ static VERTEX_DATA: [f32; 28] = [
 
 static ELEMENTS: [u32; 6] = [0, 1, 2, 2, 3, 0];
 
-const VS_SRC: &'static [u8] = b"
+const VS_SRC: &[u8] = b"
     #version 150 core
 
     in vec2 position;
@@ -480,7 +474,7 @@ const VS_SRC: &'static [u8] = b"
     }
 \0";
 
-const FS_SRC: &'static [u8] = b"
+const FS_SRC: &[u8] = b"
     #version 150 core
 
     in vec3 Color;

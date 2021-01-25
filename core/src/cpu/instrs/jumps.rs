@@ -20,7 +20,7 @@ pub fn jr_n(cpu : &mut CPU) -> u8 {
         }
     */
 
-    return 12 /* Cycles */;
+    12 /* Cycles */
 }
 
 /// **0x20** - *JR NZ,n* - Jump if Z flag is reset
@@ -28,10 +28,10 @@ pub fn jr_nz_n(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_z() {
         let n = get_n(cpu) as i8;
         cpu.regs.pc = (cpu.regs.pc as i16 + n as i16) as u16;
-        return 12 /* Cycles */;
+        12 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -40,10 +40,10 @@ pub fn jr_z_n(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_z() {
         let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
         cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
-        return 12 /* Cycles */;
+        12 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -52,10 +52,10 @@ pub fn jr_nc_n(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_c() {
         let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
         cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
-        return 12 /* Cycles */;
+        12 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -64,10 +64,10 @@ pub fn jr_c_n(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_c() {
         let n = cpu.mem.read(cpu.regs.pc) as i8 as i16;
         cpu.regs.pc = ((cpu.regs.pc as i16).wrapping_add(n.wrapping_add(1))) as u16 /* +1 for n size */;
-        return 12 /* Cycles */;
+        12 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(1);
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -75,10 +75,10 @@ pub fn jr_c_n(cpu : &mut CPU) -> u8 {
 pub fn jp_nz_nn(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_z() {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
-        return 16 /* Cycles */;
+        16 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -86,7 +86,7 @@ pub fn jp_nz_nn(cpu : &mut CPU) -> u8 {
 pub fn jmp_nn(cpu : &mut CPU) -> u8 {
     cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
     
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 /// **0xD2** - *JP NC,nn* - Jump to address nn (two byte) if C flag is reset
@@ -94,11 +94,11 @@ pub fn jp_nc_nn(cpu : &mut CPU) -> u8 {
     if !cpu.regs.get_flag_c() {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
 
-        return 16 /* Cycles */;
+        16 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
         
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -107,11 +107,11 @@ pub fn jp_c_nn(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_c() {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
         
-        return 16 /* Cycles */;
+        16 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
         
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -124,11 +124,11 @@ pub fn call_nz_nn(cpu : &mut CPU) -> u8 {
         cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc.wrapping_add(2));
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
         
-        return 24 /* Cycles */;
+        24 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
         
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -137,11 +137,11 @@ pub fn jp_z_nn(cpu : &mut CPU) -> u8 {
     if cpu.regs.get_flag_z() {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
 
-        return 16 /* Cycles */;
+        16 /* Cycles */
     } else {
         cpu.regs.pc = cpu.regs.pc.wrapping_add(2);
 
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -152,11 +152,11 @@ pub fn call_z_nn(cpu : &mut CPU) -> u8 {
         cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc + 2);
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
         
-        return 24 /* Cycles */;
+        24 /* Cycles */
     } else {
         cpu.regs.pc += 2;
         
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -166,7 +166,7 @@ pub fn call_nn(cpu : &mut CPU) -> u8 {
     cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc + 2);
     cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
     
-    return 24 /* Cycles */;
+    24 /* Cycles */
 }
 
 /// **0xD4** - *CALL NC,nn* - If N is false jump to address nn and store current pc in stack
@@ -176,11 +176,11 @@ pub fn call_nc_nn(cpu : &mut CPU) -> u8 {
         cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc + 2);
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
         
-        return 24 /* Cycles */;
+        24 /* Cycles */
     } else {
         cpu.regs.pc += 2;
         
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -191,11 +191,11 @@ pub fn call_c_nn(cpu : &mut CPU) -> u8 {
         cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc + 2);
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.pc);
         
-        return 24 /* Cycles */;
+        24 /* Cycles */
     } else {
         cpu.regs.pc += 2;
         
-        return 12 /* Cycles */;
+        12 /* Cycles */
     }
 }
 
@@ -207,9 +207,9 @@ pub fn ret_nz(cpu : &mut CPU) -> u8 {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
         cpu.regs.sp += 2;
         
-        return 20 /* Cycles */;
+        20 /* Cycles */
     } else {
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -219,9 +219,9 @@ pub fn ret_z(cpu : &mut CPU) -> u8 {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
         cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
         
-        return 20 /* Cycles */;
+        20 /* Cycles */
     } else {
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -230,7 +230,7 @@ pub fn ret(cpu : &mut CPU) -> u8 {
     cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
     cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
     
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 /// **0xD0** - *RET nc* - Return if C flag is reset
@@ -239,9 +239,9 @@ pub fn ret_nc(cpu : &mut CPU) -> u8 {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
         cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
         
-        return 20 /* Cycles */;
+        20 /* Cycles */
     } else {
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -251,9 +251,9 @@ pub fn ret_c(cpu : &mut CPU) -> u8 {
         cpu.regs.pc = cpu.mem.read_short(cpu.regs.sp);
         cpu.regs.sp = cpu.regs.sp.wrapping_add(2);
         
-        return 20 /* Cycles */;
+        20 /* Cycles */
     } else {
-        return 8 /* Cycles */;
+        8 /* Cycles */
     }
 }
 
@@ -264,7 +264,7 @@ pub fn reti(cpu : &mut CPU) -> u8 {
 
     cpu.interrupts_enabled = true; // Doesn't miss a cycle
     
-    return 16 /* Cycles */;
+    16 /* Cycles */
 }
 
 
@@ -272,14 +272,14 @@ pub fn reti(cpu : &mut CPU) -> u8 {
 pub fn jmp_hl(cpu : &mut CPU) -> u8 {
     cpu.regs.pc = cpu.regs.get_hl();
     
-    return 4 /* Cycles */;
+    4 /* Cycles */
 }
 
 /// -- Restarts. --
 pub fn rst(cpu : &mut CPU, step : u16) -> u8 {
     cpu.regs.sp = cpu.regs.sp.wrapping_sub(2);
     cpu.mem.write_short(cpu.regs.sp, cpu.regs.pc);
-    cpu.regs.pc = 0 + step;
+    cpu.regs.pc = step;
 
-    return 32 /* Cycles */;
+    32 /* Cycles */
 }

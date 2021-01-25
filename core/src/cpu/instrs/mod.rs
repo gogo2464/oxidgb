@@ -39,7 +39,7 @@ use cpu::instrs::increments::*;
 
 #[inline]
 pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
-    return match instr & 0xFF {
+    match instr & 0xFF {
         0x00 => nop(cpu),
         0x01 => ld_bc_nnnn(cpu),
         0x02 => ld_pxx_x(cpu.regs.get_bc(), cpu.regs.a, cpu),
@@ -305,7 +305,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
 
 #[inline]
 fn cb(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
-    return match (instr >> 8) & 0xFF {
+    match (instr >> 8) & 0xFF {
         0x00 => rlc_b(cpu),
         0x01 => rlc_c(cpu),
         0x02 => rlc_d(cpu),
