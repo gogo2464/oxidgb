@@ -4,8 +4,6 @@
  *
  * The main entry-point for the LibRetro frontend
 **/
-
-#[macro_use]
 extern crate libretro_backend;
 
 #[macro_use]
@@ -34,15 +32,13 @@ use std::fs::File;
 use std::io::Cursor;
 use std::io::Read;
 
-use std::error::Error;
-
 struct OxidgbEmulator<'a> {
     game_data: Option<GameData>,
     cpu: Option<CPU<'a>>,
     serialized_size: usize,
 }
 
-impl OxidgbEmulator {
+impl OxidgbEmulator<'_> {
     fn new() -> Self {
         OxidgbEmulator {
             game_data: None,
@@ -52,13 +48,13 @@ impl OxidgbEmulator {
     }
 }
 
-impl Default for OxidgbEmulator {
+impl Default for OxidgbEmulator<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl libretro_backend::Core for OxidgbEmulator {
+impl libretro_backend::Core for OxidgbEmulator<'_> {
     /*fn on_serialize( &mut self, _data: *mut libc::c_void, _size: libc::size_t ) -> bool {
         false
     }*/
@@ -81,22 +77,14 @@ impl libretro_backend::Core for OxidgbEmulator {
             }
 
             let file_size = match fs::metadata(rom_path) {
-                Err(why) => panic!(
-                    "couldn't read metadata of {}: {}",
-                    rom_path.display(),
-                    why.description()
-                ),
+                Err(why) => panic!("couldn't read metadata of {}: {}", rom_path.display(), why),
                 Ok(meta) => meta.len(),
             } as usize;
 
             let mut data = Vec::with_capacity(file_size);
 
             let mut file = match File::open(&rom_path) {
-                Err(why) => panic!(
-                    "couldn't open {}: {}",
-                    rom_path.display(),
-                    why.description()
-                ),
+                Err(why) => panic!("couldn't open {}: {}", rom_path.display(), why),
                 Ok(file) => file,
             };
 
@@ -165,7 +153,7 @@ impl libretro_backend::Core for OxidgbEmulator {
             .collect();
 
         cpu.mem.set_input(&gb_buttons);
-        cpu.run(&mut None);
+        cpu.run();
 
         let mut pixel_data = [0 as u8; 160 * 144 * 4];
 
