@@ -1,55 +1,57 @@
+pub mod interrupts;
 /**
  * cpu.rs
  *
  * Manages the primary CPU loop, as well as storing information about current state.
 **/
-
 pub mod regs;
-pub mod interrupts;
 
 mod instrs; // Private to the CPU implementation
 
 use mem::GBMemory;
 
-use cpu::regs::Registers;
 use cpu::instrs::execute_instruction;
 use cpu::interrupts::InterruptType;
+use cpu::regs::Registers;
 
 #[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct CPU<'a> {
-    pub regs : Registers,
-    pub mem : GBMemory<'a>,
-    pub interrupts_enabled : bool,
-    pub interrupts_countdown : i8,
-    pub stopped : bool,
-    pub halted : bool,
+    pub regs: Registers,
+    pub mem: GBMemory<'a>,
+    pub interrupts_enabled: bool,
+    pub interrupts_countdown: i8,
+    pub stopped: bool,
+    pub halted: bool,
 
     /// If the timer was high
-    pub timer_armed : bool,
-    pub timer_counter : i32,
-    pub timer_enabled : bool,
+    pub timer_armed: bool,
+    pub timer_counter: i32,
+    pub timer_enabled: bool,
 
-    pub cycle_counter : u32,
-    pub timer_invoke_counter : u32
+    pub cycle_counter: u32,
+    pub timer_invoke_counter: u32,
 }
 
 impl CPU<'_> {
     /// Ticks the CPU + other components one instruction.
-    pub fn tick<#[cfg(feature = "debugger")] Debugger : GameboyDebugger>(&mut self, #[cfg(feature = "debugger")] mut debugger : &mut Debugger) -> bool {
+    pub fn tick<#[cfg(feature = "debugger")] Debugger: GameboyDebugger>(
+        &mut self,
+        #[cfg(feature = "debugger")] mut debugger: &mut Debugger,
+    ) -> bool {
         // Before tick
         if self.mem.dirty_interrupts {
             //self.mem.dirty_interrupts = false;
             let available_interrupts = self.mem.ioregs.iflag & self.mem.interrupt_reg;
 
-            for bit in 0 .. 5 {
+            for bit in 0..5 {
                 if (available_interrupts >> bit) & 0x1 == 1 {
                     let interrupt = InterruptType::get_by_bit(bit);
                     match interrupt {
                         Some(value) => {
                             if self.try_interrupt(value) {
-                                break
+                                break;
                             }
-                        },
+                        }
                         None => {
                             panic!("WARN: Unable to handle unknown interrupt");
                         }
@@ -67,7 +69,7 @@ impl CPU<'_> {
                 0b01 => 262144,
                 0b10 => 65536,
                 0b11 => 16384,
-                _    => panic!("Bad clock speed: {}", speed)
+                _ => panic!("Bad clock speed: {}", speed),
             };
 
             if self.timer_counter > 4194304 / freq {
@@ -136,7 +138,7 @@ impl CPU<'_> {
             //println!("GPU throwing interrupt: {:?}", value);
             self.throw_interrupt(value);
             if value == InterruptType::VBLANK {
-                return true
+                return true;
             }
         }
 
@@ -144,7 +146,10 @@ impl CPU<'_> {
     }
 
     /// Runs a iteration of the CPU
-    pub fn run<#[cfg(feature = "debugger")] Debugger : GameboyDebugger>(&mut self, #[cfg(feature = "debugger")] mut debugger : &mut Debugger) {
+    pub fn run<#[cfg(feature = "debugger")] Debugger: GameboyDebugger>(
+        &mut self,
+        #[cfg(feature = "debugger")] mut debugger: &mut Debugger,
+    ) {
         self.cycle_counter = 0;
         self.timer_invoke_counter = 0;
 
@@ -155,7 +160,7 @@ impl CPU<'_> {
     }
 
     /// Registers that a interrupt should be thrown.
-    pub fn throw_interrupt(&mut self, interrupt : InterruptType) -> bool {
+    pub fn throw_interrupt(&mut self, interrupt: InterruptType) -> bool {
         // Check to see if we are in a STOP event
         if self.stopped && interrupt != InterruptType::KEYPAD {
             return false;
@@ -171,7 +176,7 @@ impl CPU<'_> {
     }
 
     /// Callback from memory to try to throw a memory interrupt.
-    pub fn try_interrupt(&mut self, interrupt : InterruptType) -> bool {
+    pub fn try_interrupt(&mut self, interrupt: InterruptType) -> bool {
         if !self.interrupts_enabled && !self.halted {
             return false;
         }
@@ -200,26 +205,26 @@ impl CPU<'_> {
             InterruptType::LCDC => 0x0048,
             InterruptType::TIMER => 0x0050,
             InterruptType::SERIAL => 0x0058,
-            InterruptType::KEYPAD => 0x0060
+            InterruptType::KEYPAD => 0x0060,
         };
 
         true
     }
 
     /// Builds a CPU from the specified memory module.
-    pub fn build(mem : GBMemory) -> CPU {
+    pub fn build(mem: GBMemory) -> CPU {
         CPU {
-            regs : CPU::get_default_registers(),
+            regs: CPU::get_default_registers(),
             mem,
-            interrupts_enabled : true,
-            interrupts_countdown : -1,
-            stopped : false,
-            halted : false,
-            timer_counter : 0,
-            timer_enabled : false,
-            timer_armed : false,
-            cycle_counter : 0,
-            timer_invoke_counter : 0
+            interrupts_enabled: true,
+            interrupts_countdown: -1,
+            stopped: false,
+            halted: false,
+            timer_counter: 0,
+            timer_enabled: false,
+            timer_armed: false,
+            cycle_counter: 0,
+            timer_invoke_counter: 0,
         }
     }
 
@@ -238,12 +243,12 @@ impl CPU<'_> {
             h: 0x01,
             l: 0x4D,
 
-            sp : 0xFFFE,
-            pc : 0x0100
+            sp: 0xFFFE,
+            pc: 0x0100,
         }
     }
 }
 
 pub trait GameboyDebugger {
-    fn debug(&mut self, cpu : &mut CPU);
+    fn debug(&mut self, cpu: &mut CPU);
 }

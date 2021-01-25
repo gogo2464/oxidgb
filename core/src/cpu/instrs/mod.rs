@@ -3,13 +3,12 @@
  *
  * The primary switchboard for CPU instructions.
 **/
-
 mod utils;
 
-mod special;
 mod jumps;
 mod loads;
 mod loads16;
+mod special;
 
 // ALU
 mod bit;
@@ -23,10 +22,10 @@ mod increments;
 
 use cpu::CPU;
 
-use cpu::instrs::special::*;
 use cpu::instrs::jumps::*;
 use cpu::instrs::loads::*;
 use cpu::instrs::loads16::*;
+use cpu::instrs::special::*;
 
 use cpu::instrs::bit::*;
 use cpu::instrs::bitrotation::*;
@@ -38,7 +37,7 @@ use cpu::instrs::general::*;
 use cpu::instrs::increments::*;
 
 #[inline]
-pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
+pub fn execute_instruction(cpu: &mut CPU, instr: u16, origin: u16) -> u8 {
     match instr & 0xFF {
         0x00 => nop(cpu),
         0x01 => ld_bc_nnnn(cpu),
@@ -304,7 +303,7 @@ pub fn execute_instruction(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
 }
 
 #[inline]
-fn cb(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
+fn cb(cpu: &mut CPU, instr: u16, origin: u16) -> u8 {
     match (instr >> 8) & 0xFF {
         0x00 => rlc_b(cpu),
         0x01 => rlc_c(cpu),
@@ -563,7 +562,11 @@ fn cb(cpu : &mut CPU, instr : u16, origin : u16) -> u8 {
         0xFE => set_x_hl(cpu, 7),
         0xFF => set_a(cpu, 7),
         _ => {
-            panic!("Unknown CB instruction: ${:02X} at ${:04X}", (instr >> 8) & 0xFF, origin);
+            panic!(
+                "Unknown CB instruction: ${:02X} at ${:04X}",
+                (instr >> 8) & 0xFF,
+                origin
+            );
         }
     }
 }

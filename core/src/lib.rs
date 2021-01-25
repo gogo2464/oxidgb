@@ -13,11 +13,11 @@ extern crate log;
 #[cfg(feature = "serialisation")]
 extern crate serde;
 
-pub mod rom;
-pub mod mem;
 pub mod cpu;
 pub mod gpu;
 pub mod input;
+pub mod mem;
+pub mod rom;
 pub mod sound;
 
 mod io;

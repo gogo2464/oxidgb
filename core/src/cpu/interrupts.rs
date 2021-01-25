@@ -12,11 +12,11 @@ pub enum InterruptType {
     LCDC = 1,
     TIMER = 2,
     SERIAL = 3,
-    KEYPAD = 4
+    KEYPAD = 4,
 }
 
 impl InterruptType {
-    pub fn get_by_bit(bit : u8) -> Option<InterruptType> {
+    pub fn get_by_bit(bit: u8) -> Option<InterruptType> {
         match bit {
             0 => Some(InterruptType::VBLANK),
             1 => Some(InterruptType::LCDC),

@@ -13,33 +13,33 @@ extern crate log;
 
 extern crate oxidgb_core;
 
-extern crate serde;
 extern crate bincode;
+extern crate serde;
 
 mod logging;
 
 use libretro_backend::*;
 
-use oxidgb_core::input::GameboyButton;
-use oxidgb_core::rom::GameROM;
-use oxidgb_core::mem::GBMemory;
 use oxidgb_core::cpu::CPU;
+use oxidgb_core::input::GameboyButton;
+use oxidgb_core::mem::GBMemory;
 use oxidgb_core::rom::get_rom_size;
+use oxidgb_core::rom::GameROM;
 
 use std::path::Path;
 
 use std::fs;
 use std::fs::File;
 
-use std::io::Read;
 use std::io::Cursor;
+use std::io::Read;
 
 use std::error::Error;
 
 struct OxidgbEmulator<'a> {
     game_data: Option<GameData>,
     cpu: Option<CPU<'a>>,
-    serialized_size: usize
+    serialized_size: usize,
 }
 
 impl OxidgbEmulator {
@@ -47,7 +47,7 @@ impl OxidgbEmulator {
         OxidgbEmulator {
             game_data: None,
             cpu: None,
-            serialized_size: 0
+            serialized_size: 0,
         }
     }
 }
@@ -64,8 +64,7 @@ impl libretro_backend::Core for OxidgbEmulator {
     }*/
 
     fn info() -> CoreInfo {
-        CoreInfo::new("oxidgb", env!("CARGO_PKG_VERSION"))
-            .supports_roms_with_extension("gb")
+        CoreInfo::new("oxidgb", env!("CARGO_PKG_VERSION")).supports_roms_with_extension("gb")
     }
 
     fn on_load_game(&mut self, game_data: GameData) -> LoadGameResult {
@@ -73,7 +72,7 @@ impl libretro_backend::Core for OxidgbEmulator {
         // TODO: gate is_verbose
         logging::setup_logging(true).unwrap();
 
-        let rom =  if let Some(data) = game_data.data() {
+        let rom = if let Some(data) = game_data.data() {
             GameROM::build(data.to_owned())
         } else if let Some(path) = game_data.path() {
             let rom_path = Path::new(path);
@@ -82,16 +81,22 @@ impl libretro_backend::Core for OxidgbEmulator {
             }
 
             let file_size = match fs::metadata(rom_path) {
-                Err(why) => panic!("couldn't read metadata of {}: {}", rom_path.display(),
-                                   why.description()),
-                Ok(meta) => meta.len()
+                Err(why) => panic!(
+                    "couldn't read metadata of {}: {}",
+                    rom_path.display(),
+                    why.description()
+                ),
+                Ok(meta) => meta.len(),
             } as usize;
 
             let mut data = Vec::with_capacity(file_size);
 
             let mut file = match File::open(&rom_path) {
-                Err(why) => panic!("couldn't open {}: {}", rom_path.display(),
-                                   why.description()),
+                Err(why) => panic!(
+                    "couldn't open {}: {}",
+                    rom_path.display(),
+                    why.description()
+                ),
                 Ok(file) => file,
             };
 
@@ -119,8 +124,7 @@ impl libretro_backend::Core for OxidgbEmulator {
         self.serialized_size = bincode::serialized_size(&self.cpu).unwrap() as _;
 
         let info = AudioVideoInfo::new()
-            .video(160, 144,
-                   60.0, PixelFormat::ARGB8888)
+            .video(160, 144, 60.0, PixelFormat::ARGB8888)
             .audio(48000f64);
 
         LoadGameResult::Success(info)
@@ -141,10 +145,11 @@ impl libretro_backend::Core for OxidgbEmulator {
             JoypadButton::Up,
             JoypadButton::Down,
             JoypadButton::Left,
-            JoypadButton::Right
+            JoypadButton::Right,
         ];
 
-        let gb_buttons : Vec<GameboyButton> = buttons.iter()
+        let gb_buttons: Vec<GameboyButton> = buttons
+            .iter()
             .filter(|x| handle.is_joypad_button_pressed(0, **x))
             .map(|x| match *x {
                 JoypadButton::A => GameboyButton::A,
@@ -155,7 +160,7 @@ impl libretro_backend::Core for OxidgbEmulator {
                 JoypadButton::Down => GameboyButton::DOWN,
                 JoypadButton::Left => GameboyButton::LEFT,
                 JoypadButton::Right => GameboyButton::RIGHT,
-                _ => unreachable!()
+                _ => unreachable!(),
             })
             .collect();
 
@@ -166,7 +171,7 @@ impl libretro_backend::Core for OxidgbEmulator {
 
         {
             let src_data = &cpu.mem.gpu.pixel_data;
-            for i in 0 .. 160 * 144 {
+            for i in 0..160 * 144 {
                 pixel_data[i * 4] = src_data[i * 3];
                 pixel_data[i * 4 + 1] = src_data[i * 3 + 1];
                 pixel_data[i * 4 + 2] = src_data[i * 3 + 2];
@@ -177,9 +182,16 @@ impl libretro_backend::Core for OxidgbEmulator {
         let (raw_audio, raw_audio_size) = cpu.mem.sound.take_samples();
 
         // Resample to i16s
-        let mut output_data = vec![0x0000_i16; if raw_audio_size < 1600 {1600} else {raw_audio_size}];
+        let mut output_data = vec![
+            0x0000_i16;
+            if raw_audio_size < 1600 {
+                1600
+            } else {
+                raw_audio_size
+            }
+        ];
 
-        for i in 0 .. raw_audio_size {
+        for i in 0..raw_audio_size {
             output_data[i] = (raw_audio[i] * (0x7FFF as f32)) as i16;
         }
 
@@ -205,19 +217,19 @@ impl libretro_backend::Core for OxidgbEmulator {
         Some(self.serialized_size)
     }
 
-    fn on_serialize(&mut self, buffer : &mut [u8]) -> bool {
+    fn on_serialize(&mut self, buffer: &mut [u8]) -> bool {
         match bincode::serialize_into(&mut Cursor::new(buffer), &self.cpu) {
             Ok(v) => v,
-            Err(v) => panic!("Error while serializing: {:?}", v)
+            Err(v) => panic!("Error while serializing: {:?}", v),
         }
 
         true
     }
 
-    fn on_unserialize(&mut self, buffer : &[u8]) -> bool {
+    fn on_unserialize(&mut self, buffer: &[u8]) -> bool {
         self.cpu = match bincode::deserialize_from(&mut Cursor::new(buffer)) {
             Ok(v) => v,
-            Err(v) => panic!("Error while unserializing: {:?}", v)
+            Err(v) => panic!("Error while unserializing: {:?}", v),
         };
 
         true
@@ -226,17 +238,16 @@ impl libretro_backend::Core for OxidgbEmulator {
     fn save_memory(&mut self) -> Option<&mut [u8]> {
         match &mut self.cpu {
             &mut Some(ref mut v) => Some(&mut v.mem.rom.cart_ram),
-            _ => None
+            _ => None,
         }
     }
 
     fn system_memory(&mut self) -> Option<&mut [u8]> {
         match &mut self.cpu {
             &mut Some(ref mut v) => Some(&mut v.mem.ram),
-            _ => None
+            _ => None,
         }
     }
 }
 
 libretro_core!(OxidgbEmulator);
-

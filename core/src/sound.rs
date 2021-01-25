@@ -1,7 +1,6 @@
 /// sound.rs
 ///
 /// I/O register sound emulation.
-
 use io::IORegisters;
 
 #[cfg(feature = "heap_alloc")]
@@ -9,14 +8,14 @@ use io::IORegisters;
 use alloc::vec::Vec;
 
 // TODO: Vary this on different platforms?
-const SOUND_CPU_SPEED : u32 = 4194304;
+const SOUND_CPU_SPEED: u32 = 4194304;
 
-const SOUND_LENGTH_CLOCK_STEP : u32 = (SOUND_CPU_SPEED as f32 / 256f32) as u32;
+const SOUND_LENGTH_CLOCK_STEP: u32 = (SOUND_CPU_SPEED as f32 / 256f32) as u32;
 
-pub const OUTPUT_FREQUENCY : u32 = 48000;
+pub const OUTPUT_FREQUENCY: u32 = 48000;
 
 #[cfg(feature = "enable_sound")]
-const FRAME_SIZE : usize = (OUTPUT_FREQUENCY / 59) as usize * 2; // 59 as framerate != 60, but approximating is hard
+const FRAME_SIZE: usize = (OUTPUT_FREQUENCY / 59) as usize * 2; // 59 as framerate != 60, but approximating is hard
 
 /// Generates a rectangular wave.
 ///
@@ -25,7 +24,7 @@ const FRAME_SIZE : usize = (OUTPUT_FREQUENCY / 59) as usize * 2; // 59 as framer
 /// low_percent: percentage of which the wave should be low (e.g. 0.5 for square wave)
 /// Returns: -1 .. 1 inclusive output
 #[cfg(feature = "enable_sound")]
-fn rectangle_wave(step : u64, frequency : u32, low_percent : f32) -> f32 {
+fn rectangle_wave(step: u64, frequency: u32, low_percent: f32) -> f32 {
     let step = (step as f64) / SOUND_CPU_SPEED as f64;
 
     let current_interval_float = step * frequency as f64;
@@ -44,27 +43,27 @@ fn rectangle_wave(step : u64, frequency : u32, low_percent : f32) -> f32 {
 
 #[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct Sound {
-    channel_1_running : bool,
-    channel_1_step : u64,
+    channel_1_running: bool,
+    channel_1_step: u64,
 
-    channel_2_running : bool,
-    channel_2_step : u64,
+    channel_2_running: bool,
+    channel_2_step: u64,
 
     #[cfg(feature = "enable_sound")]
     #[cfg(feature = "heap_alloc")]
-    samples : Vec<f32>,
+    samples: Vec<f32>,
     #[cfg(feature = "enable_sound")]
     #[cfg(not(feature = "heap_alloc"))]
-    samples : [f32; FRAME_SIZE],
+    samples: [f32; FRAME_SIZE],
     #[cfg(feature = "enable_sound")]
-    sample_pointer : usize,
+    sample_pointer: usize,
 
-    last_cycle : u64
+    last_cycle: u64,
 }
 
 impl Sound {
     /// Iterates the sound engine, bumping the internal buffers.
-    pub fn step(&mut self, registers : &mut IORegisters, cycles : u8) {
+    pub fn step(&mut self, registers: &mut IORegisters, cycles: u8) {
         // Check for disabled
         if (registers.nr52 >> 7) & 0x1 == 0 {
             return;
@@ -89,8 +88,9 @@ impl Sound {
                 //let new_step
                 let mut current_sound_tick = registers.nr11 & 0b111111;
 
-                if self.channel_1_step / SOUND_LENGTH_CLOCK_STEP as u64 !=
-                    (self.channel_1_step + cycles as u64) / SOUND_LENGTH_CLOCK_STEP as u64 {
+                if self.channel_1_step / SOUND_LENGTH_CLOCK_STEP as u64
+                    != (self.channel_1_step + cycles as u64) / SOUND_LENGTH_CLOCK_STEP as u64
+                {
                     current_sound_tick += 1;
 
                     registers.nr11 &= !0b111111;
@@ -109,15 +109,17 @@ impl Sound {
             let low_percent = (raw_wave_pattern_duty as f32) * 0.125f32;
 
             // Get frequency
-            let mut gb_frequency = (registers.nr13 as u32) | (((registers.nr14 & 0b111) as u32) << 8);
+            let mut gb_frequency =
+                (registers.nr13 as u32) | (((registers.nr14 & 0b111) as u32) << 8);
 
             // Sweep register
             let raw_sweep_time = (registers.nr10 >> 4) & 0b111;
             let sweep_time = (raw_sweep_time as f32) / 128f32 * (SOUND_CPU_SPEED as f32);
 
-            if raw_sweep_time > 0 &&
-                self.channel_1_step / sweep_time as u64 !=
-                    (self.channel_1_step + cycles as u64) / sweep_time as u64 {
+            if raw_sweep_time > 0
+                && self.channel_1_step / sweep_time as u64
+                    != (self.channel_1_step + cycles as u64) / sweep_time as u64
+            {
                 // Shift frequency
                 let shift_iterations = registers.nr10 & 0b111;
                 let component = gb_frequency / 2_u32.pow(shift_iterations as u32);
@@ -127,8 +129,8 @@ impl Sound {
                         gb_frequency -= component;
                     }
                 } else if gb_frequency + component <= 0b111 {
-                        gb_frequency += component;
-                    }
+                    gb_frequency += component;
+                }
 
                 // Update frequency
                 registers.nr13 = (gb_frequency & 0xFF) as u8;
@@ -150,17 +152,17 @@ impl Sound {
             let raw_envelope = registers.nr12 & 0b111;
             let envelope_time = (raw_envelope as f32) / 64f32 * (SOUND_CPU_SPEED as f32);
 
-            if raw_envelope > 0 &&
-                self.channel_1_step / envelope_time as u64 !=
-                    (self.channel_1_step + cycles as u64) / envelope_time as u64 {
-
+            if raw_envelope > 0
+                && self.channel_1_step / envelope_time as u64
+                    != (self.channel_1_step + cycles as u64) / envelope_time as u64
+            {
                 if (registers.nr12 >> 3) & 0x1 == 0x1 {
                     if volume < 0xF {
                         volume += 1;
                     }
                 } else if volume > 0 {
-                        volume -= 1;
-                    }
+                    volume -= 1;
+                }
 
                 // Update presented volume
                 registers.nr12 &= !(0b1111 << 4);
@@ -174,7 +176,6 @@ impl Sound {
             }
 
             self.channel_1_step += cycles as u64;
-
         }
 
         // Check if channel 2 should be reset
@@ -196,8 +197,9 @@ impl Sound {
                 //let new_step
                 let mut current_sound_tick = registers.nr21 & 0b111111;
 
-                if self.channel_2_step / SOUND_LENGTH_CLOCK_STEP as u64 !=
-                    (self.channel_2_step + cycles as u64) / SOUND_LENGTH_CLOCK_STEP as u64 {
+                if self.channel_2_step / SOUND_LENGTH_CLOCK_STEP as u64
+                    != (self.channel_2_step + cycles as u64) / SOUND_LENGTH_CLOCK_STEP as u64
+                {
                     current_sound_tick += 1;
 
                     registers.nr21 &= !0b111111;
@@ -232,10 +234,10 @@ impl Sound {
             let raw_envelope = registers.nr22 & 0b111;
             let envelope_time = (raw_envelope as f32) / 64f32 * (SOUND_CPU_SPEED as f32);
 
-            if raw_envelope > 0 &&
-                self.channel_2_step / envelope_time as u64 !=
-                    (self.channel_2_step + cycles as u64) / envelope_time as u64 {
-
+            if raw_envelope > 0
+                && self.channel_2_step / envelope_time as u64
+                    != (self.channel_2_step + cycles as u64) / envelope_time as u64
+            {
                 if (registers.nr22 >> 3) & 0x1 == 0x1 {
                     if volume < 0xF {
                         volume += 1;
@@ -256,7 +258,6 @@ impl Sound {
             }
 
             self.channel_2_step += cycles as u64;
-
         }
 
         // Mix channels, check enable status
@@ -287,13 +288,15 @@ impl Sound {
             left_wave *= (((registers.nr50 >> 4) & 0b111) as f32) / (0x0F as f32);
             right_wave *= ((registers.nr50 & 0b111) as f32) / (0x0F as f32);
 
-            if ((self.last_cycle as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64 !=
-                (((self.last_cycle + cycles as u64) as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64
-                && self.sample_pointer + 2 <= self.samples.len() {
-                    self.samples[self.sample_pointer] = left_wave;
-                    self.samples[self.sample_pointer + 1] = right_wave;
+            if ((self.last_cycle as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64
+                != (((self.last_cycle + cycles as u64) as f64 / SOUND_CPU_SPEED as f64)
+                    * OUTPUT_FREQUENCY as f64) as u64
+                && self.sample_pointer + 2 <= self.samples.len()
+            {
+                self.samples[self.sample_pointer] = left_wave;
+                self.samples[self.sample_pointer + 1] = right_wave;
 
-                    self.sample_pointer += 2;
+                self.sample_pointer += 2;
             }
         }
 
@@ -318,21 +321,21 @@ impl Sound {
 
     pub fn build() -> Sound {
         Sound {
-            channel_1_running : false,
-            channel_1_step : 0,
+            channel_1_running: false,
+            channel_1_step: 0,
 
-            channel_2_running : false,
-            channel_2_step : 0,
+            channel_2_running: false,
+            channel_2_step: 0,
 
             #[cfg(feature = "enable_sound")]
             #[cfg(feature = "heap_alloc")]
-            samples : vec![0f32; FRAME_SIZE],
+            samples: vec![0f32; FRAME_SIZE],
             #[cfg(feature = "enable_sound")]
             #[cfg(not(feature = "heap_alloc"))]
-            samples : [0f32; FRAME_SIZE],
+            samples: [0f32; FRAME_SIZE],
             #[cfg(feature = "enable_sound")]
             sample_pointer: 0,
-            last_cycle : 0,
+            last_cycle: 0,
         }
     }
 }

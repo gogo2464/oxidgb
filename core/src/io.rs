@@ -3,80 +3,79 @@
  *
  * Handles the I/O registers.
 **/
-
 use cpu::interrupts::InterruptType;
-use mem::GBMemory;
 use gpu::GPUMode;
+use mem::GBMemory;
 
 /// Storage for various I/O registers.
 #[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct IORegisters {
-    pub p1 : u8,    // 0x00 - Joypad info and controller (R/W)
-    pub sb : u8,    // 0x01 - Serial transfer data (R/W)
-    pub div : u16,  // 0x04 - Divider register (R/W)
-    pub tima : u8,  // 0x05 - Timer Counter (R/W)
-    pub tma : u8,   // 0x06 - Timer Modulo (R/W)
-    pub tac : u8,   // 0x07 - Timer Control (R/W)
-    pub iflag : u8, // 0x0F - (if) Interrupt Flag (R/W)
-    pub nr10 : u8,  // 0x10 - Channel 1 Sweep register (R/W)
-    pub nr11 : u8,  // 0x11 - Channel 1 Sound length/Wave pattern duty (R/W)
-    pub nr12 : u8,  // 0x12 - Channel 1 Volume Envelope (R/W)
-    pub nr13 : u8,  // 0x13 - Channel 1 Frequency lo (Write Only)
-    pub nr14 : u8,  // 0x14 - Channel 1 Frequency hi (R/W)
-    pub nr21 : u8,  // 0x16 - Channel 2 Sound Length/Wave Pattern Duty (R/W)
-    pub nr22 : u8,  // 0x17 - Channel 2 Volume Envelope (R/W)
-    pub nr23 : u8,  // 0x18 - Channel 2 Frequency lo data (W)
-    pub nr24 : u8,  // 0x19 - Channel 2 Frequency hi data (R/W)
-    pub nr30 : u8,  // 0x1A - Channel 3 Sound on/off (R/W)
-    pub nr31 : u8,  // 0x1B - Channel 3 Sound Length
-    pub nr32 : u8,  // 0x1C - Channel 3 Select output level (R/W)
-    pub nr33 : u8,  // 0x1D - Channel 3 Frequency's lower data (W)
-    pub nr34 : u8,  // 0x1E - Channel 3 Frequency's higher data (R/W)
-    pub nr41 : u8,  // 0x20 - Channel 4 Sound Length (R/W)
-    pub nr42 : u8,  // 0x21 - Channel 4 Volume Envelope (R/W)
-    pub nr43 : u8,  // 0x22 - Channel 4 Polynomial Counter (R/W)
-    pub nr44 : u8,  // 0x23 - Channel 4 Counter/consecutive; Initial (R/W)
-    pub nr50 : u8,  // 0x24 - Channel control / ON-OFF / Volume (R/W)
-    pub nr51 : u8,  // 0x25 - Selection of Sound output terminal (R/W)
-    pub nr52 : u8,  // 0x26 - Sound on/off (R/W)
-    pub wave : [u8; 0x10], // Wave Pattern RAM
-    pub dma : u8,   // 0x46 - DMA Transfer and Start Address (W)
+    pub p1: u8,           // 0x00 - Joypad info and controller (R/W)
+    pub sb: u8,           // 0x01 - Serial transfer data (R/W)
+    pub div: u16,         // 0x04 - Divider register (R/W)
+    pub tima: u8,         // 0x05 - Timer Counter (R/W)
+    pub tma: u8,          // 0x06 - Timer Modulo (R/W)
+    pub tac: u8,          // 0x07 - Timer Control (R/W)
+    pub iflag: u8,        // 0x0F - (if) Interrupt Flag (R/W)
+    pub nr10: u8,         // 0x10 - Channel 1 Sweep register (R/W)
+    pub nr11: u8,         // 0x11 - Channel 1 Sound length/Wave pattern duty (R/W)
+    pub nr12: u8,         // 0x12 - Channel 1 Volume Envelope (R/W)
+    pub nr13: u8,         // 0x13 - Channel 1 Frequency lo (Write Only)
+    pub nr14: u8,         // 0x14 - Channel 1 Frequency hi (R/W)
+    pub nr21: u8,         // 0x16 - Channel 2 Sound Length/Wave Pattern Duty (R/W)
+    pub nr22: u8,         // 0x17 - Channel 2 Volume Envelope (R/W)
+    pub nr23: u8,         // 0x18 - Channel 2 Frequency lo data (W)
+    pub nr24: u8,         // 0x19 - Channel 2 Frequency hi data (R/W)
+    pub nr30: u8,         // 0x1A - Channel 3 Sound on/off (R/W)
+    pub nr31: u8,         // 0x1B - Channel 3 Sound Length
+    pub nr32: u8,         // 0x1C - Channel 3 Select output level (R/W)
+    pub nr33: u8,         // 0x1D - Channel 3 Frequency's lower data (W)
+    pub nr34: u8,         // 0x1E - Channel 3 Frequency's higher data (R/W)
+    pub nr41: u8,         // 0x20 - Channel 4 Sound Length (R/W)
+    pub nr42: u8,         // 0x21 - Channel 4 Volume Envelope (R/W)
+    pub nr43: u8,         // 0x22 - Channel 4 Polynomial Counter (R/W)
+    pub nr44: u8,         // 0x23 - Channel 4 Counter/consecutive; Initial (R/W)
+    pub nr50: u8,         // 0x24 - Channel control / ON-OFF / Volume (R/W)
+    pub nr51: u8,         // 0x25 - Selection of Sound output terminal (R/W)
+    pub nr52: u8,         // 0x26 - Sound on/off (R/W)
+    pub wave: [u8; 0x10], // Wave Pattern RAM
+    pub dma: u8,          // 0x46 - DMA Transfer and Start Address (W)
 }
 
 impl IORegisters {
     pub fn build() -> IORegisters {
         // TODO: Validate these
         IORegisters {
-            p1 : 0,
-            sb : 0,
-            div : 0xABCC,
-            tima : 0,
-            tma : 0,
-            tac : 0xF8,
-            nr10 : 0x80,
-            nr11 : 0xBF,
-            nr12 : 0xF3,
-            nr13 : 0,
-            nr14 : 0xBF,
-            nr21 : 0x3F,
-            nr22 : 0x00,
-            nr23 : 0,
-            nr24 : 0xBF,
-            nr30 : 0x7F,
-            nr31 : 0xFF,
-            nr32 : 0x9F,
-            nr33 : 0,
-            nr34 : 0,
-            nr41 : 0xFF,
-            nr42 : 0x00,
-            nr43 : 0x00,
-            nr44 : 0,
-            nr50 : 0x77,
-            nr51 : 0xF3,
-            nr52 : 0xF1,
-            wave : [0; 0x10],
-            iflag : 0,
-            dma : 0
+            p1: 0,
+            sb: 0,
+            div: 0xABCC,
+            tima: 0,
+            tma: 0,
+            tac: 0xF8,
+            nr10: 0x80,
+            nr11: 0xBF,
+            nr12: 0xF3,
+            nr13: 0,
+            nr14: 0xBF,
+            nr21: 0x3F,
+            nr22: 0x00,
+            nr23: 0,
+            nr24: 0xBF,
+            nr30: 0x7F,
+            nr31: 0xFF,
+            nr32: 0x9F,
+            nr33: 0,
+            nr34: 0,
+            nr41: 0xFF,
+            nr42: 0x00,
+            nr43: 0x00,
+            nr44: 0,
+            nr50: 0x77,
+            nr51: 0xF3,
+            nr52: 0xF1,
+            wave: [0; 0x10],
+            iflag: 0,
+            dma: 0,
         }
     }
 }
@@ -84,7 +83,7 @@ impl IORegisters {
 // These are separate as they need to access the entirety of memory
 
 /// Reads a I/O register.
-pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
+pub fn read(mem: &GBMemory, ptr: u8) -> u8 {
     match ptr {
         0x00 => {
             let p14 = (mem.ioregs.p1 >> 5) & 0x1 == 1;
@@ -101,7 +100,7 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
             }
 
             output = (!output) & 0b1111;
-            output |= ((if p14 {1} else {0}) << 5) | ((if p15 {1} else {0}) << 4);
+            output |= ((if p14 { 1 } else { 0 }) << 5) | ((if p15 { 1 } else { 0 }) << 4);
 
             output
         }
@@ -132,7 +131,7 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x24 => mem.ioregs.nr50,
         0x25 => mem.ioregs.nr51,
         0x26 => mem.ioregs.nr52,
-        0x30 ..= 0x3F => mem.ioregs.wave[(ptr - 0x30) as usize],
+        0x30..=0x3F => mem.ioregs.wave[(ptr - 0x30) as usize],
         0x40 => mem.gpu.lcdc,
         0x41 => {
             if mem.gpu.lcdc >> 7 & 0x1 == 0 {
@@ -160,11 +159,11 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x49 => mem.gpu.obp1,
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
-        0x4C ..= 0xFF => {
+        0x4C..=0xFF => {
             #[cfg(feature = "logging")]
             warn!("Out of range I/O register: {:02x}", ptr);
             0xFF
-        },
+        }
         _ => {
             #[cfg(feature = "logging")]
             warn!("Unknown I/O register: {:02x}", ptr);
@@ -174,13 +173,13 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
 }
 
 /// Writes to a I/O register.
-pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
+pub fn write(mem: &mut GBMemory, ptr: u8, val: u8) {
     match ptr {
         0x00 => mem.ioregs.p1 = val,
         0x01 => {
             // Serial
             //info!("{}", val as char);
-        },
+        }
         0x02 => mem.ioregs.sb = val,
         0x04 => mem.ioregs.div = 0,
         0x05 => mem.ioregs.tima = val,
@@ -189,7 +188,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x0F => {
             mem.ioregs.iflag = val;
             mem.dirty_interrupts = true;
-        },
+        }
         0x10 => mem.ioregs.nr10 = val,
         0x11 => mem.ioregs.nr11 = val,
         0x12 => mem.ioregs.nr12 = val,
@@ -211,7 +210,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x24 => mem.ioregs.nr50 = val,
         0x25 => mem.ioregs.nr51 = val,
         0x26 => mem.ioregs.nr52 = val,
-        0x30 ..= 0x3F => mem.ioregs.wave[(ptr - 0x30) as usize] = val,
+        0x30..=0x3F => mem.ioregs.wave[(ptr - 0x30) as usize] = val,
         0x40 => {
             let old_bit = mem.gpu.lcdc >> 7;
             let changed_bit = val >> 7;
@@ -219,8 +218,10 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
                 if changed_bit == 0 {
                     if mem.gpu.mode != GPUMode::Vblank {
                         #[cfg(feature = "debug_structs")]
-                        panic!("Disabling/enabling LCD during non-vblank! (actual mode: {:?})",
-                               mem.gpu.mode);
+                        panic!(
+                            "Disabling/enabling LCD during non-vblank! (actual mode: {:?})",
+                            mem.gpu.mode
+                        );
                         #[cfg(not(feature = "debug_structs"))]
                         panic!("Disabling/enabling LCD during non-vblank!");
                     }
@@ -239,7 +240,7 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
             }
 
             mem.gpu.lcdc = val;
-        },
+        }
         0x41 => mem.gpu.stat = val,
         0x42 => mem.gpu.scy = val,
         0x43 => mem.gpu.scx = val,
@@ -253,10 +254,10 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x49 => mem.gpu.obp1 = val,
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
-        0x4C ..= 0xFF => {
+        0x4C..=0xFF => {
             #[cfg(feature = "logging")]
             warn!("Out of range I/O register: {:02x} = {:02x}", ptr, val);
-        },
+        }
         _ => {
             #[cfg(feature = "logging")]
             warn!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
@@ -265,11 +266,11 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
 }
 
 /// Executes a DMA.
-fn execute_dma(mem : &mut GBMemory) {
+fn execute_dma(mem: &mut GBMemory) {
     // TODO: Locking
     let address = (mem.ioregs.dma as u16) * 0x100;
 
-    for i in 0 .. 0xA0 {
+    for i in 0..0xA0 {
         let byte = mem.read(address + i);
         mem.write(0xFE00 + i, byte);
     }

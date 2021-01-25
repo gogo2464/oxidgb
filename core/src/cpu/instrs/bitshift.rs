@@ -3,13 +3,12 @@
  *
  * Operations to shift bits.
 **/
-
 use cpu::CPU;
 
 /// **0xCB 0x26** - *SLA (hl)* - Shift (hl) left into Carry. LSB of a set to 0.
-pub fn sla_phl(cpu : &mut CPU) -> u8 {
+pub fn sla_phl(cpu: &mut CPU) -> u8 {
     let current_value = cpu.mem.read(cpu.regs.get_hl());
-    let new_value = (current_value << 1) & !1;// & (0b01111111);
+    let new_value = (current_value << 1) & !1; // & (0b01111111);
 
     cpu.mem.write(cpu.regs.get_hl(), new_value);
 
@@ -21,10 +20,10 @@ pub fn sla_phl(cpu : &mut CPU) -> u8 {
 
 /// **0xCB 0x23** - *SLA X* - Shift X left into Carry. LSB of a set to 0.
 macro_rules! sla {
-    ($name:ident, $reg:ident) => (
-        pub fn $name(cpu : &mut CPU) -> u8 {
+    ($name:ident, $reg:ident) => {
+        pub fn $name(cpu: &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
-            let new_value = (current_value << 1) & !1;// & (0b01111111);
+            let new_value = (current_value << 1) & !1; // & (0b01111111);
 
             cpu.regs.$reg = new_value;
 
@@ -33,7 +32,7 @@ macro_rules! sla {
             cpu.regs.set_flag_z(new_value == 0);
             8 /* Cycles */
         }
-    )
+    };
 }
 
 sla!(sla_b, b);
@@ -45,7 +44,7 @@ sla!(sla_l, l);
 sla!(sla_a, a);
 
 /// **0xCB 0x3E** - *SRL (hl)* - Shift (hl) right through Carry.
-pub fn srl_phl(cpu : &mut CPU) -> u8 {
+pub fn srl_phl(cpu: &mut CPU) -> u8 {
     let current_value = cpu.mem.read(cpu.regs.get_hl());
     let new_value = current_value >> 1;
 
@@ -60,8 +59,8 @@ pub fn srl_phl(cpu : &mut CPU) -> u8 {
 
 /// **0xCB 0x38 ~ 0xCB 0x3F** - *SRL X* - Shift X right through Carry.
 macro_rules! srl {
-    ($name:ident, $reg:ident) => (
-        pub fn $name(cpu : &mut CPU) -> u8 {
+    ($name:ident, $reg:ident) => {
+        pub fn $name(cpu: &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             let new_value = current_value >> 1;
 
@@ -73,7 +72,7 @@ macro_rules! srl {
             cpu.regs.set_flag_z(new_value == 0);
             8 /* Cycles */
         }
-    )
+    };
 }
 
 srl!(srl_b, b);
@@ -85,7 +84,7 @@ srl!(srl_l, l);
 srl!(srl_a, a);
 
 /// **0xCB 0x2E** - *SRA (hl)* - Shift (hl) right through Carry.
-pub fn sra_phl(cpu : &mut CPU) -> u8 {
+pub fn sra_phl(cpu: &mut CPU) -> u8 {
     let current_value = cpu.mem.read(cpu.regs.get_hl());
     let new_value = (current_value >> 1) | (current_value & 0b10000000);
 
@@ -99,8 +98,8 @@ pub fn sra_phl(cpu : &mut CPU) -> u8 {
 
 /// **0xCB 0x28 ~ 0xCB 0x2F** - *SRA X* - Shift X right through Carry.
 macro_rules! sra {
-    ($name:ident, $reg:ident) => (
-        pub fn $name(cpu : &mut CPU) -> u8 {
+    ($name:ident, $reg:ident) => {
+        pub fn $name(cpu: &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             let new_value = (current_value >> 1) | (current_value & 0b10000000);
 
@@ -111,7 +110,7 @@ macro_rules! sra {
             cpu.regs.set_flag_z(new_value == 0);
             8 /* Cycles */
         }
-    )
+    };
 }
 
 sra!(sra_b, b);
@@ -121,4 +120,3 @@ sra!(sra_e, e);
 sra!(sra_h, h);
 sra!(sra_l, l);
 sra!(sra_a, a);
-

@@ -1,10 +1,10 @@
-extern crate fern;
 extern crate chrono;
+extern crate fern;
 extern crate log;
 
 use std::io;
 
-pub fn setup_logging(is_verbose : bool) -> Result<(), fern::InitError> {
+pub fn setup_logging(is_verbose: bool) -> Result<(), fern::InitError> {
     let mut base_config = fern::Dispatch::new();
 
     if is_verbose {
@@ -15,12 +15,14 @@ pub fn setup_logging(is_verbose : bool) -> Result<(), fern::InitError> {
 
     let stdout_config = fern::Dispatch::new()
         .format(|out, message, record| {
-            out.finish(format_args!("[{}] [{}:{}] [{}]: {}",
-                                    chrono::Local::now().format("%H:%M:%S"),
-                                    record.location().file(),
-                                    record.location().line(),
-                                    record.level(),
-                                    message))
+            out.finish(format_args!(
+                "[{}] [{}:{}] [{}]: {}",
+                chrono::Local::now().format("%H:%M:%S"),
+                record.location().file(),
+                record.location().line(),
+                record.level(),
+                message
+            ))
         })
         .chain(io::stdout());
 

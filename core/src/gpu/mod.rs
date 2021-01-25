@@ -3,13 +3,12 @@
  *
  * Renders graphics into a framebuffer
 **/
-
 use cpu::interrupts::InterruptType;
 
 #[cfg(feature = "heap_alloc")]
 use alloc::vec::Vec;
 
-pub const PITCH : usize = 3;
+pub const PITCH: usize = 3;
 
 #[derive(Copy, Clone, PartialEq)]
 #[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
@@ -19,47 +18,47 @@ pub enum GPUMode {
     Hblank = 0,
     Vblank = 1,
     OamScanline = 2,
-    VramScanline = 3
+    VramScanline = 3,
 }
 
 #[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct GPU {
     #[cfg(feature = "heap_alloc")]
-    pub pixel_data : Vec<u8>,
+    pub pixel_data: Vec<u8>,
     #[cfg(not(feature = "heap_alloc"))]
-    pub pixel_data : [u8; 160 * 144 * PITCH],
+    pub pixel_data: [u8; 160 * 144 * PITCH],
 
-    pub mode : GPUMode,
-    pub palette : [u8; 4 * 3],
+    pub mode: GPUMode,
+    pub palette: [u8; 4 * 3],
 
     #[cfg(feature = "heap_alloc")]
-    pub vram : Vec<u8>,
+    pub vram: Vec<u8>,
     #[cfg(not(feature = "heap_alloc"))]
-    pub vram : [u8; 8192],
+    pub vram: [u8; 8192],
     #[cfg(feature = "heap_alloc")]
-    pub oam : Vec<u8>,
+    pub oam: Vec<u8>,
     #[cfg(not(feature = "heap_alloc"))]
-    pub oam : [u8; 160],
+    pub oam: [u8; 160],
 
-    pub lcdc : u8,
-    pub stat : u8,
-    pub lyc : u8,
-    pub scx : u8,
-    pub scy : u8,
-    pub wx : u8,
-    pub wy : u8,
-    pub bgp : u8,
-    pub obp0 : u8,
-    pub obp1 : u8,
+    pub lcdc: u8,
+    pub stat: u8,
+    pub lyc: u8,
+    pub scx: u8,
+    pub scy: u8,
+    pub wx: u8,
+    pub wy: u8,
+    pub bgp: u8,
+    pub obp0: u8,
+    pub obp1: u8,
 
-    pub internal_clock : u32,
-    pub current_line : u8
+    pub internal_clock: u32,
+    pub current_line: u8,
 }
 
 impl GPU {
     /// Steps the GPU. Returns true if a Vblank interrupt should be thrown.
-    pub fn step(&mut self, cycles : u32) -> Option<InterruptType> {
-        let display_screen    = self.lcdc >> 7 & 0x1 == 1;
+    pub fn step(&mut self, cycles: u32) -> Option<InterruptType> {
+        let display_screen = self.lcdc >> 7 & 0x1 == 1;
 
         if !display_screen {
             return None;
@@ -74,7 +73,7 @@ impl GPU {
                     if self.current_line > 153 {
                         // TODO: Fix up vblank timing here - we are one line too slow
                         // VBlank is done, empty our framebuffer
-                        for x in 0 .. 160 * 144 {
+                        for x in 0..160 * 144 {
                             self.draw_pixel(x, 0);
                         }
 
@@ -84,12 +83,12 @@ impl GPU {
                         self.current_line += 1;
                     }
 
-
                     return self.check_lyc();
                 }
             }
             GPUMode::Hblank => {
-                if self.internal_clock >= 204 { // 204 * 144 = 29376 cycles for DMG
+                if self.internal_clock >= 204 {
+                    // 204 * 144 = 29376 cycles for DMG
                     self.internal_clock -= 204;
 
                     self.current_line += 1;
@@ -167,18 +166,18 @@ impl GPU {
     /// Draws a pixel to the backing framebuffer, based upon the overall
     ///  RGB framebuffer.
     #[inline]
-    fn draw_pixel(&mut self, pos : usize, shade : u8) {
-        for i in 0 .. PITCH {
+    fn draw_pixel(&mut self, pos: usize, shade: u8) {
+        for i in 0..PITCH {
             self.pixel_data[pos * PITCH + i] = self.palette[shade as usize * PITCH + i];
         }
     }
 
     fn draw_vram(&mut self) {
-        let window_tile_map   = self.lcdc >> 6 & 0x1 == 1;
-        let window_display    = self.lcdc >> 5 & 0x1 == 1;
-        let tile_data         = self.lcdc >> 4 & 0x1 == 1;
-        let bg_tile_map       = self.lcdc >> 3 & 0x1 == 1;
-        let bg_window_display = self.lcdc      & 0x1 == 1;
+        let window_tile_map = self.lcdc >> 6 & 0x1 == 1;
+        let window_display = self.lcdc >> 5 & 0x1 == 1;
+        let tile_data = self.lcdc >> 4 & 0x1 == 1;
+        let bg_tile_map = self.lcdc >> 3 & 0x1 == 1;
+        let bg_window_display = self.lcdc & 0x1 == 1;
 
         // -- Tiles
         if bg_window_display {
@@ -194,12 +193,12 @@ impl GPU {
                 y -= 32 * 8
             }
 
-            for col in 0 .. 160 {
+            for col in 0..160 {
                 // Work out which tile we are drawing
                 let x_tile = x / 8;
                 let y_tile = y / 8;
 
-                let tile_pointer : usize;
+                let tile_pointer: usize;
 
                 if bg_tile_map {
                     tile_pointer = (0x1C00 + y_tile * 32 + x_tile) as usize;
@@ -238,7 +237,7 @@ impl GPU {
                 }
 
                 if pos * PITCH >= self.pixel_data.len() {
-                    continue
+                    continue;
                 }
 
                 self.draw_pixel(pos, combined);
@@ -254,17 +253,19 @@ impl GPU {
             let y = (self.current_line as i16) - (wy as i16);
 
             for col in 0..160 {
-                if !(0 ..= 143).contains(&y)
+                if !(0..=143).contains(&y)
                     || self.current_line as u16 >= wy + 144
-                    || wx >= 160 || wy >= 144 {
-                    break
+                    || wx >= 160
+                    || wy >= 144
+                {
+                    break;
                 }
 
                 // Work out which tile we are drawing
                 let x_tile = x / 8;
                 let y_tile = y / 8;
 
-                let tile_pointer : usize;
+                let tile_pointer: usize;
 
                 if window_tile_map {
                     tile_pointer = (0x1C00 + y_tile * 32 + x_tile) as usize;
@@ -300,11 +301,11 @@ impl GPU {
                 x += 1;
 
                 if self.current_line < self.wy {
-                    continue
+                    continue;
                 }
 
                 if pos * PITCH >= self.pixel_data.len() {
-                    continue
+                    continue;
                 }
 
                 self.draw_pixel(pos, combined);
@@ -312,18 +313,17 @@ impl GPU {
         }
     }
 
-
     fn draw_sprites(&mut self) {
-        let sprite_size    = self.lcdc >> 2 & 0x1 == 1;
+        let sprite_size = self.lcdc >> 2 & 0x1 == 1;
         let sprite_display = self.lcdc >> 1 & 0x1 == 1;
 
-        let sprite_height : i16 = if sprite_size {16} else {8};
+        let sprite_height: i16 = if sprite_size { 16 } else { 8 };
 
         // -- Sprites
         let mut sprite_row_count = 0;
 
         if sprite_display {
-            for sprite_index in 0 .. 40 {
+            for sprite_index in 0..40 {
                 let info_ptr = sprite_index * 4;
 
                 let x_pos = ((self.oam[info_ptr + 1] as u16 & 0xFF) as i16) - 8;
@@ -332,13 +332,14 @@ impl GPU {
                 let y_tile = self.current_line as i16 - y_pos;
 
                 if y_pos <= self.current_line as i16 - sprite_height
-                    || y_pos > self.current_line as i16 {
-                    continue
+                    || y_pos > self.current_line as i16
+                {
+                    continue;
                 }
 
                 sprite_row_count += 1;
                 if sprite_row_count > 10 {
-                    break
+                    break;
                 }
 
                 let info = self.oam[info_ptr + 3] as i8 as i16 & 0xFF;
@@ -347,20 +348,26 @@ impl GPU {
                 let x_flip = info >> 5 & 0x1 == 1;
                 let palette = info >> 4 & 0x1 == 1;
 
-                let tile_pos = (self.oam[info_ptr + 2] as i8 as i16 &
-                                    if sprite_size {(!(1u8)) as i16} else {0xFF}) * 16;
-                let tex_pos = (tile_pos +
-                             if y_flip { sprite_height - 1 - y_tile } else { y_tile } * 2) as usize;
+                let tile_pos = (self.oam[info_ptr + 2] as i8 as i16
+                    & if sprite_size { (!(1u8)) as i16 } else { 0xFF })
+                    * 16;
+                let tex_pos = (tile_pos
+                    + if y_flip {
+                        sprite_height - 1 - y_tile
+                    } else {
+                        y_tile
+                    } * 2) as usize;
 
                 let first_byte = self.vram[tex_pos];
                 let second_byte = self.vram[tex_pos + 1];
 
-                for bit in 0 .. 8 {
+                for bit in 0..8 {
                     if y_pos + y_tile >= 144
-                        || x_pos + if x_flip {7 - bit} else {bit} < 0
-                        || x_pos + if x_flip {7 - bit} else {bit} >= 160 {
+                        || x_pos + if x_flip { 7 - bit } else { bit } < 0
+                        || x_pos + if x_flip { 7 - bit } else { bit } >= 160
+                    {
                         //println!("Bad pos: (x={}, y={}, y_tile={}", x_pos, y_pos, y_tile);
-                        continue
+                        continue;
                     }
 
                     // Combine our bits from first and second byte
@@ -368,18 +375,19 @@ impl GPU {
                     let second_bit = (second_byte >> (7 - bit)) & 0x1;
                     let combined_bit = first_bit + second_bit * 2;
 
-                    let combined : u8;
+                    let combined: u8;
                     if palette {
                         combined = (self.obp1 >> (combined_bit * 2)) & 0b11;
                     } else {
                         combined = (self.obp0 >> (combined_bit * 2)) & 0b11;
                     }
 
-                    let array_pos = ((y_pos + y_tile)
-                        * 160 + x_pos + if x_flip {7 - bit} else {bit}) as usize;
+                    let array_pos =
+                        ((y_pos + y_tile) * 160 + x_pos + if x_flip { 7 - bit } else { bit })
+                            as usize;
 
                     if combined_bit == 0x00 {
-                        continue
+                        continue;
                     }
 
                     // If this pixel is filled in, render it (scaled) to the screen
@@ -395,26 +403,26 @@ impl GPU {
     pub fn build() -> GPU {
         GPU {
             #[cfg(feature = "heap_alloc")]
-            pixel_data : vec![0xFF; 160 * 144 * PITCH],
+            pixel_data: vec![0xFF; 160 * 144 * PITCH],
             #[cfg(not(feature = "heap_alloc"))]
-            pixel_data : [0xFF; 160 * 144 * PITCH],
-            mode : GPUMode::Vblank,
-            palette : [224,248,208, 136,192,112, 52,104,86, 8,24,32], // BGB palette
+            pixel_data: [0xFF; 160 * 144 * PITCH],
+            mode: GPUMode::Vblank,
+            palette: [224, 248, 208, 136, 192, 112, 52, 104, 86, 8, 24, 32], // BGB palette
 
             #[cfg(feature = "heap_alloc")]
-            vram : vec![0; 8192],
+            vram: vec![0; 8192],
             #[cfg(not(feature = "heap_alloc"))]
-            vram : [0; 8192],
+            vram: [0; 8192],
             #[cfg(feature = "heap_alloc")]
-            oam : vec![0; 160],
+            oam: vec![0; 160],
             #[cfg(not(feature = "heap_alloc"))]
-            oam : [0; 160],
+            oam: [0; 160],
 
             lcdc: 0x91,
             stat: 0x81, // TODO: verify
             scx: 0,
             scy: 0,
-            lyc : 0,
+            lyc: 0,
             wx: 0,
             wy: 0,
             bgp: 0xFC,

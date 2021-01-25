@@ -312,7 +312,8 @@ fn main() {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::Resized(physical_size) => context.resize(physical_size),
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                WindowEvent::KeyboardInput { input, .. } => if let Some(key) = input.virtual_keycode {
+                WindowEvent::KeyboardInput { input, .. } => {
+                    if let Some(key) = input.virtual_keycode {
                         let key = match key {
                             VirtualKeyCode::Up => GameboyButton::UP,
                             VirtualKeyCode::Down => GameboyButton::DOWN,
@@ -352,7 +353,8 @@ fn main() {
                                 }
                             }
                         }
-                },
+                    }
+                }
                 _ => (),
             },
             Event::RedrawRequested(_) => {
@@ -375,12 +377,7 @@ fn main() {
                         );
 
                         gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo.assume_init());
-                        gl::DrawElements(
-                            gl::TRIANGLES,
-                            6,
-                            gl::UNSIGNED_INT,
-                            std::ptr::null::<_>(),
-                        );
+                        gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, std::ptr::null::<_>());
                     }
                 }
 

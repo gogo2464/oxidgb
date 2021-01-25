@@ -3,11 +3,10 @@
  *
  * Operations to swap nibbles in bits.
 **/
-
 use cpu::CPU;
 
 /// **0xCB 0x36** - *SWAP (hl)* - Swaps upper and lower nibbles of (hl).
-pub fn swap_phl(cpu : &mut CPU) -> u8 {
+pub fn swap_phl(cpu: &mut CPU) -> u8 {
     let current_value = cpu.mem.read(cpu.regs.get_hl());
     // TODO: Check output
     cpu.regs.f = 0;
@@ -22,8 +21,8 @@ pub fn swap_phl(cpu : &mut CPU) -> u8 {
 
 /// **0xCB 0x30 ~ 0x37** - *SWAP X* - Swaps upper and lower nibbles of X.
 macro_rules! swap {
-    ($name:ident, $reg:ident) => (
-        pub fn $name(cpu : &mut CPU) -> u8 {
+    ($name:ident, $reg:ident) => {
+        pub fn $name(cpu: &mut CPU) -> u8 {
             let current_value = cpu.regs.$reg;
             // TODO: Check output
             cpu.regs.f = 0;
@@ -34,7 +33,7 @@ macro_rules! swap {
 
             8 /* Cycles */
         }
-    )
+    };
 }
 
 swap!(swap_b, b);
