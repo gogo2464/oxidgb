@@ -410,7 +410,7 @@ fn main() {
 
                         if !fast_forward {
                             for item in &mut samples {
-                                *item /= 100f32;
+                                *item /= 10f32;
                             }
                             let sample_buffer = SamplesBuffer::new(
                                 2,
