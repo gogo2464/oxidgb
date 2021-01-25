@@ -5,7 +5,7 @@
 **/
 
 /// The available CPU registers on a Gameboy.
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct Registers {
     pub a : u8,
     pub b : u8,

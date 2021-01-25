@@ -15,10 +15,10 @@ use cpu::regs::Registers;
 use cpu::instrs::execute_instruction;
 use cpu::interrupts::InterruptType;
 
-#[derive(Serialize, Deserialize)]
-pub struct CPU {
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
+pub struct CPU<'a> {
     pub regs : Registers,
-    pub mem : GBMemory,
+    pub mem : GBMemory<'a>,
     pub interrupts_enabled : bool,
     pub interrupts_countdown : i8,
     pub stopped : bool,
@@ -33,9 +33,9 @@ pub struct CPU {
     pub timer_invoke_counter : u32
 }
 
-impl CPU {
+impl CPU<'_> {
     /// Ticks the CPU + other components one instruction.
-    pub fn tick(&mut self, debugger : &mut Option<&mut GameboyDebugger>) -> bool {
+    pub fn tick<#[cfg(feature = "debugger")] Debugger : GameboyDebugger>(&mut self, #[cfg(feature = "debugger")] mut debugger : &mut Debugger) -> bool {
         // Before tick
         if self.mem.dirty_interrupts {
             //self.mem.dirty_interrupts = false;
@@ -84,12 +84,8 @@ impl CPU {
         }
 
         // Main tick
-        match *debugger {
-            Some(ref mut boxed) => {
-                boxed.debug(self);
-            },
-            _ => {}
-        }
+        #[cfg(feature = "debugger")]
+        debugger.debug(self);
 
         let cycles = if !self.stopped && !self.halted {
             // Read instruction
@@ -151,13 +147,14 @@ impl CPU {
     }
 
     /// Runs a iteration of the CPU
-    pub fn run(&mut self, mut debugger : &mut Option<&mut GameboyDebugger>) {
+    pub fn run<#[cfg(feature = "debugger")] Debugger : GameboyDebugger>(&mut self, #[cfg(feature = "debugger")] mut debugger : &mut Debugger) {
         self.cycle_counter = 0;
         self.timer_invoke_counter = 0;
 
+        #[cfg(feature = "debugger")]
         while !self.tick(&mut debugger) {}
-
-        //println!("Counts: {} + {}", self.cycle_counter, self.timer_invoke_counter);
+        #[cfg(not(feature = "debugger"))]
+        while !self.tick() {}
     }
 
     /// Registers that a interrupt should be thrown.

@@ -1,14 +1,16 @@
 #![no_std]
-#![feature(alloc)]
+#![feature(stmt_expr_attributes)]
 
 #[macro_use]
+#[cfg(feature = "heap_alloc")]
 extern crate alloc;
 
 #[macro_use]
+#[cfg(feature = "logging")]
 extern crate log;
 
 #[macro_use]
-extern crate serde_derive;
+#[cfg(feature = "serialisation")]
 extern crate serde;
 
 pub mod rom;

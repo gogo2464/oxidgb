@@ -1,14 +1,31 @@
 [package]
 name = "oxidgb_core"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["James <jselby@jselby.net>"]
 
 [lib]
 name = "oxidgb_core"
+#crate-type = ["lib", "staticlib"]
 
 [dependencies]
-log = "0.3.8"
+log = {version = "0.4.13", optional = true, default-features = false}
 
-serde = {version = "1.0.68", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.68"
+serde = {version = "1.0.122", optional = true, default-features = false, features = ["alloc", "derive"]}
+
+[features]
+# Allocates large arrays/ROMs on the heap. Otherwise, will allocate on
+# stack and use pointers where needed to access ROM data.
+heap_alloc = []
+# Allows for save-state saving.
+serialisation = ["serde", "heap_alloc"]
+# Used for printing structs as debug messages.
+debug_structs = []
+# Enables debug logging.
+logging = ["log", "debug_structs"]
+
+# Sound output will be disabled, and no API will be available
+# Some internal mechanisms for updating sound will remain enabled
+enable_sound = []
+# Debugger interface for stepping through the emulation state
+debugger = []
 

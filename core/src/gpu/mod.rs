@@ -6,11 +6,14 @@
 
 use cpu::interrupts::InterruptType;
 
-use alloc::Vec;
+#[cfg(feature = "heap_alloc")]
+use alloc::vec::Vec;
 
 pub const PITCH : usize = 3;
 
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "debug_structs", derive(Debug))]
 #[allow(dead_code)] // For debug messages
 pub enum GPUMode {
     Hblank = 0,
@@ -19,14 +22,24 @@ pub enum GPUMode {
     VramScanline = 3
 }
 
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct GPU {
+    #[cfg(feature = "heap_alloc")]
     pub pixel_data : Vec<u8>,
+    #[cfg(not(feature = "heap_alloc"))]
+    pub pixel_data : [u8; 160 * 144 * PITCH],
+
     pub mode : GPUMode,
     pub palette : [u8; 4 * 3],
 
+    #[cfg(feature = "heap_alloc")]
     pub vram : Vec<u8>,
+    #[cfg(not(feature = "heap_alloc"))]
+    pub vram : [u8; 8192],
+    #[cfg(feature = "heap_alloc")]
     pub oam : Vec<u8>,
+    #[cfg(not(feature = "heap_alloc"))]
+    pub oam : [u8; 160],
 
     pub lcdc : u8,
     pub stat : u8,
@@ -382,12 +395,21 @@ impl GPU {
     /// Builds a new instance of the GPU
     pub fn build() -> GPU {
         return GPU {
+            #[cfg(feature = "heap_alloc")]
             pixel_data : vec![0xFF; 160 * 144 * PITCH],
+            #[cfg(not(feature = "heap_alloc"))]
+            pixel_data : [0xFF; 160 * 144 * PITCH],
             mode : GPUMode::Vblank,
             palette : [224,248,208, 136,192,112, 52,104,86, 8,24,32], // BGB palette
 
+            #[cfg(feature = "heap_alloc")]
             vram : vec![0; 8192],
+            #[cfg(not(feature = "heap_alloc"))]
+            vram : [0; 8192],
+            #[cfg(feature = "heap_alloc")]
             oam : vec![0; 160],
+            #[cfg(not(feature = "heap_alloc"))]
+            oam : [0; 160],
 
             lcdc: 0x91,
             stat: 0x81, // TODO: verify

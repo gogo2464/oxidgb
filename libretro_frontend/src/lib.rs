@@ -36,9 +36,9 @@ use std::io::Cursor;
 
 use std::error::Error;
 
-struct OxidgbEmulator {
+struct OxidgbEmulator<'a> {
     game_data: Option<GameData>,
-    cpu: Option<CPU>,
+    cpu: Option<CPU<'a>>,
     serialized_size: usize
 }
 

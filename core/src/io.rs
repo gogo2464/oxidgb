@@ -9,7 +9,7 @@ use mem::GBMemory;
 use gpu::GPUMode;
 
 /// Storage for various I/O registers.
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct IORegisters {
     pub p1 : u8,    // 0x00 - Joypad info and controller (R/W)
     pub sb : u8,    // 0x01 - Serial transfer data (R/W)
@@ -132,12 +132,12 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x24 => mem.ioregs.nr50,
         0x25 => mem.ioregs.nr51,
         0x26 => mem.ioregs.nr52,
-        0x30 ... 0x3F => mem.ioregs.wave[(ptr - 0x30) as usize],
+        0x30 ..= 0x3F => mem.ioregs.wave[(ptr - 0x30) as usize],
         0x40 => mem.gpu.lcdc,
         0x41 => {
             if mem.gpu.lcdc >> 7 & 0x1 == 0 {
                 // Screen disabled
-                (1 << 7)
+                1 << 7
             } else {
                 let stat = mem.gpu.stat & 0b1111000;
                 let mode = (mem.gpu.mode as u8) & 0b11;
@@ -160,11 +160,13 @@ pub fn read(mem : &GBMemory, ptr : u8) -> u8 {
         0x49 => mem.gpu.obp1,
         0x4A => mem.gpu.wy,
         0x4B => mem.gpu.wx,
-        0x4C ... 0xFF => {
+        0x4C ..= 0xFF => {
+            #[cfg(feature = "logging")]
             warn!("Out of range I/O register: {:02x}", ptr);
             0xFF
         },
         _ => {
+            #[cfg(feature = "logging")]
             warn!("Unknown I/O register: {:02x}", ptr);
             0xFF
         }
@@ -209,15 +211,18 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x24 => mem.ioregs.nr50 = val,
         0x25 => mem.ioregs.nr51 = val,
         0x26 => mem.ioregs.nr52 = val,
-        0x30 ... 0x3F => mem.ioregs.wave[(ptr - 0x30) as usize] = val,
+        0x30 ..= 0x3F => mem.ioregs.wave[(ptr - 0x30) as usize] = val,
         0x40 => {
             let old_bit = mem.gpu.lcdc >> 7;
             let changed_bit = val >> 7;
             if old_bit != changed_bit {
                 if changed_bit == 0 {
                     if mem.gpu.mode != GPUMode::Vblank {
+                        #[cfg(feature = "debug_structs")]
                         panic!("Disabling/enabling LCD during non-vblank! (actual mode: {:?})",
                                mem.gpu.mode);
+                        #[cfg(not(feature = "debug_structs"))]
+                        panic!("Disabling/enabling LCD during non-vblank!");
                     }
 
                     mem.gpu.current_line = 0;
@@ -248,10 +253,12 @@ pub fn write(mem : &mut GBMemory, ptr : u8, val : u8) {
         0x49 => mem.gpu.obp1 = val,
         0x4A => mem.gpu.wy = val,
         0x4B => mem.gpu.wx = val,
-        0x4C ... 0xFF => {
+        0x4C ..= 0xFF => {
+            #[cfg(feature = "logging")]
             warn!("Out of range I/O register: {:02x} = {:02x}", ptr, val);
         },
         _ => {
+            #[cfg(feature = "logging")]
             warn!("Unknown I/O register: {:02x} = {:02x}", ptr, val);
         }
     }

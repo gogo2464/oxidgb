@@ -4,7 +4,8 @@
  * Contains types for interrupts.
 **/
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy)]
+#[cfg_attr(feature = "debug_structs", derive(Debug))]
 #[allow(dead_code)] // For debug messages
 pub enum InterruptType {
     VBLANK = 0,
@@ -23,6 +24,7 @@ impl InterruptType {
             3 => Some(InterruptType::SERIAL),
             4 => Some(InterruptType::KEYPAD),
             _ => {
+                #[cfg(feature = "logging")]
                 warn!("Unknown interrupt type: {}", bit);
                 None
             }

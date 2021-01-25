@@ -4,7 +4,9 @@
 
 use io::IORegisters;
 
-use alloc::Vec;
+#[cfg(feature = "heap_alloc")]
+#[cfg(feature = "enable_sound")]
+use alloc::vec::Vec;
 
 // TODO: Vary this on different platforms?
 const SOUND_CPU_SPEED : u32 = 4194304;
@@ -13,6 +15,7 @@ const SOUND_LENGTH_CLOCK_STEP : u32 = (SOUND_CPU_SPEED as f32 / 256f32) as u32;
 
 pub const OUTPUT_FREQUENCY : u32 = 48000;
 
+#[cfg(feature = "enable_sound")]
 const FRAME_SIZE : usize = (OUTPUT_FREQUENCY / 59) as usize * 2; // 59 as framerate != 60, but approximating is hard
 
 /// Generates a rectangular wave.
@@ -21,6 +24,7 @@ const FRAME_SIZE : usize = (OUTPUT_FREQUENCY / 59) as usize * 2; // 59 as framer
 /// frequency: target frequency of wave
 /// low_percent: percentage of which the wave should be low (e.g. 0.5 for square wave)
 /// Returns: -1 .. 1 inclusive output
+#[cfg(feature = "enable_sound")]
 fn rectangle_wave(step : u64, frequency : u32, low_percent : f32) -> f32 {
     let step = (step as f64) / SOUND_CPU_SPEED as f64;
 
@@ -42,7 +46,7 @@ fn rectangle_wave(step : u64, frequency : u32, low_percent : f32) -> f32 {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct Sound {
     channel_1_running : bool,
     channel_1_step : u64,
@@ -50,7 +54,13 @@ pub struct Sound {
     channel_2_running : bool,
     channel_2_step : u64,
 
+    #[cfg(feature = "enable_sound")]
+    #[cfg(feature = "heap_alloc")]
     samples : Vec<f32>,
+    #[cfg(feature = "enable_sound")]
+    #[cfg(not(feature = "heap_alloc"))]
+    samples : [f32; FRAME_SIZE],
+    #[cfg(feature = "enable_sound")]
     sample_pointer : usize,
 
     last_cycle : u64
@@ -73,6 +83,7 @@ impl Sound {
             self.channel_1_step = 0;
         }
 
+        #[cfg(feature = "enable_sound")]
         let mut register_1_wave = 0f32;
 
         // Handle channel 1
@@ -96,7 +107,9 @@ impl Sound {
             }
 
             // Get pattern duty
+            #[cfg(feature = "enable_sound")]
             let raw_wave_pattern_duty = (registers.nr11 >> 6) & 0b11;
+            #[cfg(feature = "enable_sound")]
             let low_percent = (raw_wave_pattern_duty as f32) * 0.125f32;
 
             // Get frequency
@@ -129,9 +142,11 @@ impl Sound {
                 registers.nr14 |= ((gb_frequency >> 8) & 0b111) as u8;
             }
 
+            #[cfg(feature = "enable_sound")]
             let hz_frequency = 131072 / (2048 - gb_frequency);
 
             // Get pattern
+            #[cfg(feature = "enable_sound")]
             let wave_pattern = rectangle_wave(self.channel_1_step, hz_frequency, low_percent);
 
             // Get volume
@@ -161,7 +176,10 @@ impl Sound {
             }
 
             // Generate the final wave for this channel
-            register_1_wave = wave_pattern * ((volume as f32) / (0x0F as f32));
+            #[cfg(feature = "enable_sound")]
+            {
+                register_1_wave = wave_pattern * ((volume as f32) / (0x0F as f32));
+            }
 
             self.channel_1_step += cycles as u64;
 
@@ -176,6 +194,7 @@ impl Sound {
             self.channel_2_step = 0;
         }
 
+        #[cfg(feature = "enable_sound")]
         let mut register_2_wave = 0f32;
 
         // Handle channel 1
@@ -199,14 +218,19 @@ impl Sound {
             }
 
             // Get pattern duty
+            #[cfg(feature = "enable_sound")]
             let raw_wave_pattern_duty = (registers.nr21 >> 6) & 0b11;
+            #[cfg(feature = "enable_sound")]
             let low_percent = (raw_wave_pattern_duty as f32) * 0.125f32;
 
             // Get frequency
+            #[cfg(feature = "enable_sound")]
             let gb_frequency = (registers.nr23 as u32) | (((registers.nr24 & 0b111) as u32) << 8);
+            #[cfg(feature = "enable_sound")]
             let hz_frequency = 131072 / (2048 - gb_frequency);
 
             // Get pattern
+            #[cfg(feature = "enable_sound")]
             let wave_pattern = rectangle_wave(self.channel_2_step, hz_frequency, low_percent);
 
             // Get volume
@@ -236,45 +260,51 @@ impl Sound {
             }
 
             // Generate the final wave for this channel
-            register_2_wave = wave_pattern * ((volume as f32) / (0x0F as f32));
+            #[cfg(feature = "enable_sound")]
+            {
+                register_2_wave = wave_pattern * ((volume as f32) / (0x0F as f32));
+            }
 
             self.channel_2_step += cycles as u64;
 
         }
 
         // Mix channels, check enable status
-        let mut left_wave = 0f32;
-        let mut right_wave = 0f32;
+        #[cfg(feature = "enable_sound")]
+        {
+            let mut left_wave = 0f32;
+            let mut right_wave = 0f32;
 
-        if self.channel_1_running {
-            if registers.nr51 & 0x1 == 0x1 {
-                left_wave += register_1_wave / 2f32;
+            if self.channel_1_running {
+                if registers.nr51 & 0x1 == 0x1 {
+                    left_wave += register_1_wave / 2f32;
+                }
+                if (registers.nr51 >> 4) & 0x1 == 0x1 {
+                    right_wave += register_1_wave / 2f32;
+                }
             }
-            if (registers.nr51 >> 4) & 0x1 == 0x1 {
-                right_wave += register_1_wave / 2f32;
+
+            if self.channel_2_running {
+                if (registers.nr51 >> 1) & 0x1 == 0x1 {
+                    left_wave += register_2_wave / 2f32;
+                }
+                if (registers.nr51 >> 5) & 0x1 == 0x1 {
+                    right_wave += register_2_wave / 2f32;
+                }
             }
-        }
 
-        if self.channel_2_running {
-            if (registers.nr51 >> 1) & 0x1 == 0x1 {
-                left_wave += register_2_wave / 2f32;
-            }
-            if (registers.nr51 >> 5) & 0x1 == 0x1 {
-                right_wave += register_2_wave / 2f32;
-            }
-        }
+            // Final master volume
+            left_wave *= (((registers.nr50 >> 4) & 0b111) as f32) / (0x0F as f32);
+            right_wave *= ((registers.nr50 & 0b111) as f32) / (0x0F as f32);
 
-        // Final master volume
-        left_wave *= (((registers.nr50 >> 4) & 0b111) as f32) / (0x0F as f32);
-        right_wave *= ((registers.nr50 & 0b111) as f32) / (0x0F as f32);
+            if ((self.last_cycle as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64 !=
+                (((self.last_cycle + cycles as u64) as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64 {
+                if self.sample_pointer + 2 <= self.samples.len() {
+                    self.samples[self.sample_pointer] = left_wave;
+                    self.samples[self.sample_pointer + 1] = right_wave;
 
-        if ((self.last_cycle as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64 !=
-            (((self.last_cycle + cycles as u64) as f64 / SOUND_CPU_SPEED as f64) * OUTPUT_FREQUENCY as f64) as u64 {
-            if self.sample_pointer + 2 <= self.samples.len() {
-                self.samples[self.sample_pointer] = left_wave;
-                self.samples[self.sample_pointer + 1] = right_wave;
-
-                self.sample_pointer += 2;
+                    self.sample_pointer += 2;
+                }
             }
         }
 
@@ -282,6 +312,7 @@ impl Sound {
     }
 
     /// Drains all samples from this device.
+    #[cfg(feature = "enable_sound")]
     pub fn take_samples(&mut self) -> ([f32; FRAME_SIZE], usize) {
         let mut samples = [0f32; FRAME_SIZE];
 
@@ -304,7 +335,13 @@ impl Sound {
             channel_2_running : false,
             channel_2_step : 0,
 
+            #[cfg(feature = "enable_sound")]
+            #[cfg(feature = "heap_alloc")]
             samples : vec![0f32; FRAME_SIZE],
+            #[cfg(feature = "enable_sound")]
+            #[cfg(not(feature = "heap_alloc"))]
+            samples : [0f32; FRAME_SIZE],
+            #[cfg(feature = "enable_sound")]
             sample_pointer: 0,
             last_cycle : 0,
         }

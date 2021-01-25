@@ -10,13 +10,13 @@ crate-type = ["cdylib"]
 libretro-backend = {path = "libretro-backend"}
 
 # Logging implementation
-fern = "0.4.0"
-chrono = "0.4.0"
-log = "0.3.8"
+fern = "0.6.0"
+chrono = "0.4.19"
+log = "0.4.13"
 
-serde = {version = "1.0.68", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.68"
+serde = {version = "1.0.122", default-features = false, features = ["alloc", "derive"] }
 bincode = "1.0.1"
 
 [dependencies.oxidgb_core]
 path = "../core"
+features = ["serialisation", "heap_alloc"]

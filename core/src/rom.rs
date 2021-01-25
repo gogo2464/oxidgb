@@ -4,12 +4,16 @@
  * Loads and parses .gb cartridges, and provides a interface for mappers.
 **/
 
-use alloc::String;
-use alloc::Vec;
+#[cfg(feature = "heap_alloc")]
+use alloc::vec::Vec;
+
+#[cfg(feature = "heap_alloc")]
+use core::marker::PhantomData;
 
 /// The different kinds of cartridges that can be handled. Each has a
 ///  specific way of managing memory/providing additional capabilities.
-#[derive(PartialEq, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Debug)]
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 #[allow(dead_code)] // For debug messages
 pub enum CartridgeType {
     RomOnly           = 0x00,
@@ -42,19 +46,28 @@ pub enum CartridgeType {
 
 /// Holds a game's ROM, and exposes interfaces to read information from
 ///  it intelligently.
-#[derive(Serialize, Deserialize)]
-pub struct GameROM {
+#[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
+pub struct GameROM<'a> {
+    #[cfg(feature = "heap_alloc")]
     backing_data : Vec<u8>,
+    #[cfg(not(feature = "heap_alloc"))]
+    backing_data : &'a [u8],
     current_bank : u8,
 
+    #[cfg(feature = "heap_alloc")]
     pub cart_ram : Vec<u8>,
+    #[cfg(not(feature = "heap_alloc"))]
+    pub cart_ram : [u8; 128 * 1024], // 128 Kbyte,
     ram_size : usize,
 
-    pub name : String,
-    pub cart_type : CartridgeType
+    pub cart_type : CartridgeType,
+
+    // Used to facilitate a lifetime in non-heap modes
+    #[cfg(feature = "heap_alloc")]
+    pub alloc_marker : PhantomData<&'a ()>
 }
 
-impl GameROM {
+impl<'a> GameROM<'a> {
     pub fn read(&self, ptr : u16) -> u8 {
         return match self.cart_type {
             CartridgeType::RomOnly => {
@@ -73,6 +86,7 @@ impl GameROM {
                     let target = ptr as usize + (self.current_bank as usize - 1)
                         * 0x4000;
                     if target >= self.backing_data.len() {
+                        #[cfg(feature = "logging")]
                         warn!("Out of range read for MBC1!");
                         0xFF
                     } else {
@@ -81,13 +95,17 @@ impl GameROM {
                 }
             }
             _ => {
+                #[cfg(feature = "debug_structs")]
                 panic!("Unimplemented cart type: {:?}", self.cart_type);
+                #[cfg(not(feature = "debug_structs"))]
+                panic!("Unimplemented cart type");
             }
         };
     }
 
     pub fn read_ram(&self, ptr : u16) -> u8 {
         if self.ram_size == 0 {
+            #[cfg(feature = "logging")]
             warn!("Reading from RAM on a ROM-only cartridge!");
             return 0xFF;
         }
@@ -104,19 +122,22 @@ impl GameROM {
             CartridgeType::RomMbc1Ram |
             CartridgeType::RomMbc1RamBatt => {
                 match ptr {
-                    0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
+                    0x0000 ..= 0x1FFF => { // ROM bank activation/deactivation
+                        #[cfg(feature = "logging")]
                         debug!("STUB: ROM bank activation: {}", val > 0);
                     }
-                    0x2000 ... 0x3FFF => { // Bank switching
+                    0x2000 ..= 0x3FFF => { // Bank switching
                         self.current_bank = val & 0b11111;
                         if self.current_bank < 1 {
                             self.current_bank = 1;
                         }
                     }
-                    0x6000 ... 0x7FFF => { // Memory models
+                    0x6000 ..= 0x7FFF => { // Memory models
+                        #[cfg(feature = "logging")]
                         warn!("MBC1 memory models are not supported!");
                     }
                     _ => {
+                        #[cfg(feature = "logging")]
                         warn!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
                                  ptr, val);
                     }
@@ -126,11 +147,13 @@ impl GameROM {
             CartridgeType::RomMbc2 |
             CartridgeType::RomMbc2Batt => {
                 match ptr {
-                    0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
+                    0x0000 ..= 0x1FFF => { // ROM bank activation/deactivation
+                        #[cfg(feature = "logging")]
                         debug!("STUB: ROM bank activation: {}", val > 0);
                     }
-                    0x2000 ... 0x3FFF => { // Bank switching
+                    0x2000 ..= 0x3FFF => { // Bank switching
                         if (ptr >> 8) & 0x1 != 1 {
+                            #[cfg(feature = "logging")]
                             warn!("MBC2: Invalid bank switch command!");
                         } else {
                             self.current_bank = val & 0b1111;
@@ -139,10 +162,12 @@ impl GameROM {
                             }
                         }
                     }
-                    0x6000 ... 0x7FFF => { // Memory models
+                    0x6000 ..= 0x7FFF => { // Memory models
+                        #[cfg(feature = "logging")]
                         warn!("MBC1 memory models are not supported!");
                     }
                     _ => {
+                        #[cfg(feature = "logging")]
                         warn!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
                                  ptr, val);
                     }
@@ -152,19 +177,22 @@ impl GameROM {
             CartridgeType::RomMbc3RamBatt |
             CartridgeType::RomMbc3TimerRamBatt => {
                 match ptr {
-                    0x0000 ... 0x1FFF => { // ROM bank activation/deactivation
+                    0x0000 ..= 0x1FFF => { // ROM bank activation/deactivation
+                        #[cfg(feature = "logging")]
                         debug!("STUB: ROM bank activation: {}", val > 0);
                     }
-                    0x2000 ... 0x3FFF => { // Bank switching
+                    0x2000 ..= 0x3FFF => { // Bank switching
                         self.current_bank = val & 0b1111111;
                         if self.current_bank < 1 {
                             self.current_bank = 1;
                         }
                     }
-                    0x6000 ... 0x7FFF => { // Memory models
+                    0x6000 ..= 0x7FFF => { // Memory models
+                        #[cfg(feature = "logging")]
                         warn!("MBC1 memory models are not supported!");
                     }
                     _ => {
+                        #[cfg(feature = "logging")]
                         warn!("Attempted to write to ROM+MBC1 cartridge @ {:04x} = {:02x}",
                                  ptr, val);
                     }
@@ -172,13 +200,17 @@ impl GameROM {
                 }
             }
             _ => {
+                #[cfg(feature = "debug_structs")]
                 panic!("Unimplemented cart type: {:?}", self.cart_type);
+                #[cfg(not(feature = "debug_structs"))]
+                panic!("Unimplemented cart type");
             }
         }
     }
 
     pub fn write_ram(&mut self, ptr : u16, val : u8) {
         if self.ram_size == 0 {
+            #[cfg(feature = "logging")]
             warn!("Writing to RAM on a ROM-only cartridge!");
             return;
         }
@@ -186,18 +218,27 @@ impl GameROM {
         self.cart_ram[ptr as usize] = val;
     }
 
+    pub fn get_cart_name(&self) -> &str {
+        core::str::from_utf8(&self.backing_data[0x134 .. 0x142]).expect("Failed to read cart name")
+    }
+
     /// Builds a new ROM from the specified file. Expects
     ///  a correctly formatted file.
     ///
     /// * `data` - The data to build a ROM from.
-    pub fn build(data : Vec<u8>) -> GameROM {
+    pub fn build(
+        #[cfg(feature = "heap_alloc")]
+        data : Vec<u8>,
+        #[cfg(not(feature = "heap_alloc"))]
+        data : &'a [u8]
+    ) -> GameROM<'a> {
         let rom_size = get_rom_size(data[0x148]);
 
         if rom_size != data.len() {
+            #[cfg(feature = "logging")]
             warn!("File size is not equal to what ROM declares!");
         }
 
-        let name = String::from_utf8(data[0x134 .. 0x142].to_vec()).unwrap();
         let cart_type = match data[0x0147] {
             0x00 => CartridgeType::RomOnly,
             0x01 => CartridgeType::RomMbc1,
@@ -229,18 +270,24 @@ impl GameROM {
         };
         let ram_size = get_ram_size(data[0x149]);
 
+        #[cfg(feature = "heap_alloc")]
         let ram = vec![0xFF; ram_size];
+        #[cfg(not(feature = "heap_alloc"))]
+        let ram = [0xFF; 128 * 1024];
 
+        #[cfg(feature = "logging")]
         debug!("Allocated {} bytes of cart RAM", ram.len());
 
         return GameROM {
             backing_data : data,
-            name,
             cart_type,
             current_bank : 1,
 
             cart_ram : ram,
-            ram_size
+            ram_size,
+
+            #[cfg(feature = "heap_alloc")]
+            alloc_marker : PhantomData
         };
     }
 }

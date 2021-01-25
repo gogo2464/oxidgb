@@ -86,7 +86,7 @@ srl!(srl_a, a);
 
 /// **0xCB 0x2E** - *SRA (hl)* - Shift (hl) right through Carry.
 pub fn sra_phl(cpu : &mut CPU) -> u8 {
-    let current_value = cpu.mem.read(cpu.regs.get_hl());;
+    let current_value = cpu.mem.read(cpu.regs.get_hl());
     let new_value = (current_value >> 1) | (current_value & 0b10000000);
 
     cpu.mem.write(cpu.regs.get_hl(), new_value);
