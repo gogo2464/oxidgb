@@ -1,15 +1,13 @@
 Oxidgb
 ======
 
-[![Build Status](https://ci.jselby.net/job/Oxidgb/badge/icon)](https://ci.jselby.net/job/Oxidgb/)
-
 Yet another work-in-progress Gameboy emulator for Rust.
 
 Features
 --------
 
 - Broken code
-- No audio emulation
+- ~~No~~ audio emulation
 - Crashes
 
 Running
@@ -18,7 +16,7 @@ Running
 Windows/Linux/macOS, assuming you have `cargo` on your PATH:
 
 ```bash
-cargo run --manifest-path glutin_frontend/Cargo.toml
+cargo run --release
 ```
 
 Credits
