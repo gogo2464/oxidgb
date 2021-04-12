@@ -25,7 +25,7 @@ rodio = {version = "0.7.0", optional = true}
 
 [dependencies.oxidgb_core]
 path = "../core"
-features = ["heap_alloc"]
+features = ["heap_alloc", "own_game_data"]
 
 [features]
 debugger = ["oxidgb_core/debugger", "rustyline"]

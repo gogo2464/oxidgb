@@ -16,6 +16,8 @@ serde = {version = "1.0.122", optional = true, default-features = false, feature
 # Allocates large arrays/ROMs on the heap. Otherwise, will allocate on
 # stack and use pointers where needed to access ROM data.
 heap_alloc = []
+# If the core should take ownership of any data passed to it.
+own_game_data = []
 # Allows for save-state saving.
 serialisation = ["serde", "heap_alloc"]
 # Used for printing structs as debug messages.

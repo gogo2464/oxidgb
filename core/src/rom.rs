@@ -48,9 +48,9 @@ pub enum CartridgeType {
 ///  it intelligently.
 #[cfg_attr(feature = "serialisation", derive(Serialize, Deserialize))]
 pub struct GameROM<'a> {
-    #[cfg(feature = "heap_alloc")]
+    #[cfg(feature = "own_game_data")]
     backing_data: Vec<u8>,
-    #[cfg(not(feature = "heap_alloc"))]
+    #[cfg(not(feature = "own_game_data"))]
     backing_data: &'a [u8],
     current_bank: u8,
 
@@ -224,16 +224,27 @@ impl<'a> GameROM<'a> {
     }
 
     pub fn get_cart_name(&self) -> &str {
-        core::str::from_utf8(&self.backing_data[0x134..0x142]).expect("Failed to read cart name")
+        // Find a null terminated string in the range
+        let mut range = &self.backing_data[0x134..0x142];
+
+        for i in 0 .. range.len() {
+            if range[i] == 0 {
+                range = &range[0 .. i];
+                break;
+            }
+        }
+
+        core::str::from_utf8(range).expect("Failed to read cart name")
     }
 
     /// Builds a new ROM from the specified file. Expects
     ///  a correctly formatted file.
     ///
     /// * `data` - The data to build a ROM from.
+    #[inline(always)]
     pub fn build(
-        #[cfg(feature = "heap_alloc")] data: Vec<u8>,
-        #[cfg(not(feature = "heap_alloc"))] data: &'a [u8],
+        #[cfg(feature = "own_game_data")] data: Vec<u8>,
+        #[cfg(not(feature = "own_game_data"))] data: &'a [u8],
     ) -> GameROM<'a> {
         let rom_size = get_rom_size(data[0x148]);
 

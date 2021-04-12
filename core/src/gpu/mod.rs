@@ -400,6 +400,7 @@ impl GPU {
     }
 
     /// Builds a new instance of the GPU
+    #[inline(always)]
     pub fn build() -> GPU {
         GPU {
             #[cfg(feature = "heap_alloc")]

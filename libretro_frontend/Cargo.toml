@@ -19,4 +19,4 @@ bincode = "1.0.1"
 
 [dependencies.oxidgb_core]
 path = "../core"
-features = ["serialisation", "heap_alloc", "enable_sound"]
+features = ["serialisation", "heap_alloc", "enable_sound", "own_game_data"]

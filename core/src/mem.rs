@@ -187,6 +187,7 @@ impl GBMemory<'_> {
     }
 
     /// Builds a new memory manager.
+    #[inline(always)]
     pub fn build(rom: GameROM) -> GBMemory {
         GBMemory {
             rom,

@@ -43,6 +43,7 @@ pub struct IORegisters {
 }
 
 impl IORegisters {
+    #[inline(always)]
     pub fn build() -> IORegisters {
         // TODO: Validate these
         IORegisters {

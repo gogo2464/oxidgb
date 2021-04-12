@@ -319,6 +319,7 @@ impl Sound {
         (samples, old_pointer)
     }
 
+    #[inline(always)]
     pub fn build() -> Sound {
         Sound {
             channel_1_running: false,
