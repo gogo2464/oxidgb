@@ -31,6 +31,9 @@ use std::fs::File;
 use std::io::Cursor;
 use std::io::Read;
 
+#[cfg(feature = "debugger")]
+use super::debugger::CommandLineDebugger;
+
 struct OxidgbEmulator<'a> {
     game_data: Option<GameData>,
     cpu: Option<CPU<'a>>,
@@ -152,6 +155,12 @@ impl libretro_backend::Core for OxidgbEmulator<'_> {
             .collect();
 
         cpu.mem.set_input(&gb_buttons);
+
+        #[cfg(feature = "debugger")]
+        let mut CommandLineDebugger;
+        #[cfg(feature = "debugger")]
+        cpu.run(debugger);
+        #[cfg(not(feature = "debugger"))]
         cpu.run();
 
         let mut pixel_data = [0 as u8; 160 * 144 * 4];

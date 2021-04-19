@@ -154,7 +154,7 @@ impl CPU<'_> {
         self.timer_invoke_counter = 0;
 
         #[cfg(feature = "debugger")]
-        while !self.tick(&mut debugger) {}
+        while !self.tick(debugger) {}
         #[cfg(not(feature = "debugger"))]
         while !self.tick() {}
     }
