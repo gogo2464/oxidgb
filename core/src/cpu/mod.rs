@@ -36,7 +36,7 @@ impl CPU<'_> {
     /// Ticks the CPU + other components one instruction.
     pub fn tick<#[cfg(feature = "debugger")] Debugger: GameboyDebugger>(
         &mut self,
-        #[cfg(feature = "debugger")] mut debugger: &mut Debugger,
+        #[cfg(feature = "debugger")] debugger: &mut Debugger,
     ) -> bool {
         // Before tick
         if self.mem.dirty_interrupts {
@@ -148,13 +148,13 @@ impl CPU<'_> {
     /// Runs a iteration of the CPU
     pub fn run<#[cfg(feature = "debugger")] Debugger: GameboyDebugger>(
         &mut self,
-        #[cfg(feature = "debugger")] mut debugger: &mut Debugger,
+        #[cfg(feature = "debugger")] debugger: &mut Debugger,
     ) {
         self.cycle_counter = 0;
         self.timer_invoke_counter = 0;
 
         #[cfg(feature = "debugger")]
-        while !self.tick(&mut debugger) {}
+        while !self.tick(debugger) {}
         #[cfg(not(feature = "debugger"))]
         while !self.tick() {}
     }
