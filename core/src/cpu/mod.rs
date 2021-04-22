@@ -146,9 +146,17 @@ impl CPU<'_> {
     }
 
     /// Runs a iteration of the CPU
-    pub fn run<#[cfg(feature = "debugger")] Debugger: GameboyDebugger>(
+    pub fn run_with_no_debug(
+        &mut self
+    ) {
+        self.cycle_counter = 0;
+        self.timer_invoke_counter = 0;
+    }
+
+	#[cfg(feature = "debugger")]
+    pub fn run_with_debug<Debugger: GameboyDebugger>(
         &mut self,
-        #[cfg(feature = "debugger")] debugger: &mut Debugger,
+        debugger: &mut Debugger,
     ) {
         self.cycle_counter = 0;
         self.timer_invoke_counter = 0;

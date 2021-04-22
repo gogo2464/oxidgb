@@ -35,6 +35,7 @@ use std::time::Instant;
 
 use clap::App;
 use clap::Arg;
+use clap::SubCommand;
 
 use oxidgb_core::cpu::CPU;
 use oxidgb_core::input::GameboyButton;
@@ -75,6 +76,12 @@ fn main() {
                 .short("v")
                 .long("verbose")
                 .help("Enables verbose logging"),
+        )
+        .arg(
+            Arg::with_name("debug")
+                .short("d")
+                .long("debug")
+                .help("Debugs the rom FILE"),
         );
 
     let args = app.get_matches();
@@ -125,9 +132,18 @@ fn main() {
     // Build memory
     let memory = GBMemory::build(rom);
 
-    #[cfg(feature = "debugger")]
-    let mut debugger = CommandLineDebugger::build();
 
+    let enable_debug = args.is_present("debug");
+    #[cfg(feature = "debugger")]
+    let mut debugger = match enable_debug {
+        true => {
+            Some(CommandLineDebugger::build())
+        }
+        false => {
+            None
+        }
+    };
+    
     // Build CPU
     let mut cpu = CPU::build(memory);
 
@@ -393,10 +409,17 @@ fn main() {
                 {
                     cpu.mem.set_input(&gb_buttons);
 
-                    #[cfg(feature = "debugger")]
-                    cpu.run(&mut debugger);
-                    #[cfg(not(feature = "debugger"))]
-                    cpu.run();
+                    match enable_debug {
+                        true => {
+                            #[cfg(feature = "debugger")]
+                            cpu.run_with_debug(debugger.as_mut().unwrap());
+                            #[cfg(not(feature = "debugger"))]
+                            panic!("Error: you can not use the option --debug if you have not enabled the debugger at the compilation. To use it build the program with --feature debugger with cargo");
+                        }
+                        false => {
+                            cpu.run_with_no_debug(); 
+                        }
+                    }
 
                     // Hard sync sleep
                     if !fast_forward {
