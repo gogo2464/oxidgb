@@ -19,6 +19,27 @@ Windows/Linux/macOS, assuming you have `cargo` on your PATH:
 cargo run --release
 ```
 
+Running with a debugger
+-------
+
+This does not works on Libretro. So do:
+
+```bash
+cd glutin_frontend
+cargo run --features debugger -- --load '<PATH TO YOUR GAMEBOY ROM>'
+```
+
+Then you will be able to use some commands inspirated by gdb such as:
+```
+'' (just press enter) => to step
+'r' or 'run' => to run
+'i' or 'regs' => to get registers state
+'mem X' => read one opcode not disassembled at address X
+'mems X' => read 16 opcodes not disassembled at address X 
+'break'
+```
+
+
 Credits
 -------
 
