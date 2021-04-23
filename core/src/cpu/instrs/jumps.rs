@@ -3,7 +3,7 @@
  *
  * Operations to branch code.
 **/
-use cpu::CPU;
+use cpu::cpu::CPU;
 
 use cpu::instrs::utils::*;
 

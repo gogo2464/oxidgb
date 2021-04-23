@@ -4,7 +4,7 @@ use cpu::regs::Registers;
  *
  * Operations to compare registers/memory against each other.
 **/
-use cpu::CPU;
+use cpu::cpu::CPU;
 
 /// Helper to compare registers
 #[inline]

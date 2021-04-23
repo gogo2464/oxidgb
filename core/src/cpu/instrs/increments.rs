@@ -4,7 +4,7 @@ use cpu::regs::Registers;
  *
  * Incrementing/decrementing registers.
 **/
-use cpu::CPU;
+use cpu::cpu::CPU;
 
 // -- 8 bit increments. --
 

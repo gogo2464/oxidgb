@@ -3,7 +3,7 @@
  *
  * Instructions to store information into registers/memory.
 **/
-use cpu::CPU;
+use cpu::cpu::CPU;
 
 use cpu::instrs::utils::*;
 

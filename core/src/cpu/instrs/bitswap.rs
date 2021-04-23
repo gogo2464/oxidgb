@@ -3,7 +3,7 @@
  *
  * Operations to swap nibbles in bits.
 **/
-use cpu::CPU;
+use cpu::cpu::CPU;
 
 /// **0xCB 0x36** - *SWAP (hl)* - Swaps upper and lower nibbles of (hl).
 pub fn swap_phl(cpu: &mut CPU) -> u8 {

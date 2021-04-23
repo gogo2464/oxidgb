@@ -3,7 +3,7 @@
  *
  * Special CPU instructions.
 **/
-use cpu::CPU;
+use cpu::cpu::CPU;
 
 /// **0x00** - *NOP* - No operation.
 pub fn nop(_: &mut CPU) -> u8 {
